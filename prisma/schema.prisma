@@ -1,0 +1,56 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+// 1. 用户表
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  password  String
+  role      String   @default("merchant") 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// 2. 酒店基础信息表
+model Hotel {
+  id           Int      @id @default(autoincrement())
+  merchantId   Int      // 纯粹的数字类型，没有任何外键约束
+  name         String
+  address      String
+  starRating   Int      @default(3)
+  minPrice     Decimal  @default(0.00) @db.Decimal(10, 2)
+  openingTime  DateTime? @db.Date
+  facilities   Json?    
+  coverImage   String?
+  gallery      Json?    
+  status       Int      @default(0) 
+  rejectReason String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // 仅仅为了加速查询建一个普通索引
+  @@index([merchantId])
+}
+
+// 3. 酒店房型表
+model HotelRoom {
+  id           Int      @id @default(autoincrement())
+  hotelId      Int      // 纯粹的数字类型，没有任何外键约束
+  roomName     String
+  bedInfo      String?
+  capacity     Int      @default(2)
+  hasBreakfast Boolean  @default(false)
+  price        Decimal  @db.Decimal(10, 2)
+  stock        Int      @default(10)
+  cancelPolicy String?  @default("免费取消")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // 仅仅为了加速查询建一个普通索引
+  @@index([hotelId])
+}

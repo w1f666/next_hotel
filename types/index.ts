@@ -1,0 +1,1 @@
+/*数据库模型对应的TS Interface，如hotel user*/
