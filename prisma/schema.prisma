@@ -4,43 +4,46 @@ generator client {
 
 datasource db {
   provider = "mysql"
+  url      = env("DATABASE_URL")
 }
 
-// 1. 用户表
+// 用户角色表
 model User {
   id        Int      @id @default(autoincrement())
   username  String   @unique
   password  String
-  role      String   @default("merchant") 
+  role      String   @default("merchant")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@map("users")
 }
 
-// 2. 酒店基础信息表
+// 酒店基础信息表
 model Hotel {
-  id           Int      @id @default(autoincrement())
-  merchantId   Int      // 纯粹的数字类型，没有任何外键约束
+  id           Int       @id @default(autoincrement())
+  merchantId   Int
   name         String
   address      String
-  starRating   Int      @default(3)
-  minPrice     Decimal  @default(0.00) @db.Decimal(10, 2)
+  starRating   Int       @default(3)
+  minPrice     Decimal   @default(0.00) @db.Decimal(10, 2)
   openingTime  DateTime? @db.Date
-  facilities   Json?    
+  facilities   Json?
   coverImage   String?
-  gallery      Json?    
-  status       Int      @default(0) 
+  gallery      Json?
+  status       Int       @default(0)
   rejectReason String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
-  // 仅仅为了加速查询建一个普通索引
   @@index([merchantId])
+  @@map("hotels")
 }
 
-// 3. 酒店房型表
+// 酒店房型与价格表
 model HotelRoom {
   id           Int      @id @default(autoincrement())
-  hotelId      Int      // 纯粹的数字类型，没有任何外键约束
+  hotelId      Int
   roomName     String
   bedInfo      String?
   capacity     Int      @default(2)
@@ -51,6 +54,6 @@ model HotelRoom {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  // 仅仅为了加速查询建一个普通索引
   @@index([hotelId])
+  @@map("hotel_rooms")
 }
