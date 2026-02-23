@@ -1,1 +1,1 @@
-/*api返回体类型定义*/
+/*后端交互类型 (定义 ActionResponse, LoginResponse)*/

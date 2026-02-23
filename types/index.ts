@@ -1,1 +1,1 @@
-/*数据库模型对应的TS Interface，如hotel user*/
+/*类型集线器 (导出 API 类型，定义如 HotelWithRooms 的聚合类型)*/

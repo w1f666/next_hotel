@@ -1,170 +1,117 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🏨 易宿酒店预订平台 (E-Hotel Next.js)
 
-## Getting Started
+本项目是一个基于 **Next.js (App Router)** 全栈架构开发的现代化酒店预订与管理平台。项目分为 **C端（移动端酒店预订）** 与 **B端（PC端商户管理后台）** 两个核心模块，采用最新的前后端同构开发范式。
 
-First, run the development server:
+## 🏗️ 架构设计亮点
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- **彻底解耦的数据库设计**：`schema.prisma` 中摒弃了传统的 `@relation` 物理外键约束，采用纯数字 ID 进行逻辑关联。提升了数据库读写性能，方便后期分表分库，完美符合大厂数据库设计规范。
+- **零 API 路由 CRUD**：使用 Next.js 最新的 Server Actions (`lib/actions/*.ts`) 代替传统的 API Route 编写。前后端共享 TypeScript 类型，实现原生函数级的数据库调用，极大减少了样板代码。
+- **完美的路由组隔离**：利用 `(with-tabbar)` 和 `(no-tabbar)` 路由组，巧妙解决了 Next.js 同级目录下文件夹命名的冲突问题，同时实现了 C端页面布局的无缝切换。
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## ✨ 核心技术栈
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **框架**: Next.js (App Router) + React
+- **数据库 ORM**: Prisma 6
+- **数据库**: MySQL
+- **样式与 UI**: Tailwind CSS (C端) + Ant Design (B端)
+- **状态管理**: React 原生 Hooks + Antd Form (零 Redux，极致轻量)
+- **鉴权机制**: JWT (JSON Web Token) + bcryptjs
+- **API 通信**: Next.js Server Actions (无缝 CRUD) + 传统 Route API (鉴权)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 📂 项目完整目录结构
 
-## Learn More
+项目采用了大厂推崇的“基于路由组的端隔离”与“Server Actions 业务收拢”架构：
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-
-## index overview
-
+```text
 e-hotel-next/
-├── app/
-│   ├── (client)/               # C端路由组
-│   │   ├── hotels/             # 酒店模块主目录 (只有一个 hotels！)
-│   │   │   ├── page.tsx        # 对应路由: /hotels (酒店列表页)
-│   │   │   ├── loading.tsx     # 列表页的加载骨架屏
-│   │   │   │
-│   │   │   └── [id]/           # ⚠️ 注意这里：详情页文件夹嵌套在 hotels 里面！
-│   │   │       └── page.tsx    # 对应路由: /hotels/123 (酒店详情页)
+├── app/                          # 🌐 Next.js App Router 核心路由目录
+│   ├── layout.tsx                # 全局根布局 (HTML/Body/基础字体与 SEO)
+│   ├── globals.css               # 全局样式 (Tailwind CSS 引入层)
+│   │
+│   ├── (client)/                 # 📱 C端 (移动端) 路由组 (对实际 URL 隐身)
+│   │   ├── (with-tabbar)/        # 📥 分组 1：带底部导航栏
+│   │   │   ├── layout.tsx        # C端基础布局 (引入 <BottomNav /> 底部菜单)
+│   │   │   └── hotels/           
+│   │   │       └── page.tsx      # C端酒店列表卡片页 (路由: /hotels)
 │   │   │
-│   │   └── layout.tsx          # C端专属的布局 (包含底部导航栏等)
+│   │   └── (no-tabbar)/          # 📤 分组 2：沉浸式页面 (无底部导航栏)
+│   │       ├── layout.tsx        # 纯净布局 (统一放置顶部返回导航条)
+│   │       └── hotels/           
+│   │           └── [id]/         
+│   │               └── page.tsx  # C端酒店详情展示页 (路由: /hotels/123)
 │   │
-│   ├── admin/                # B端PC后台应用
-│   │   ├── auth/             # 登录/注册 (已有)
-│   │   ├── hotels/           # 后台酒店管理路由
-│   │   │   ├── page.tsx      # 管理列表 (Table)
-│   │   │   ├── create/       # 新建页面
-│   │   │   └── [id]/         # 编辑页面
-│   │   └── layout.tsx        # B端整体布局 (包含侧边栏、顶部导航)
+│   ├── admin/                    # 💻 B端 (PC管理后台) 路由组
+│   │   ├── layout.tsx            # B端整体布局 (侧边栏 <Sidebar />、顶部 Header)
+│   │   ├── auth/                 
+│   │   │   └── page.tsx          # 👤 B端商户登录/注册界面
+│   │   └── hotels/               
+│   │       ├── page.tsx          # 后台酒店管理数据表格页 (路由: /admin/hotels)
+│   │       ├── create/           
+│   │       │   └── page.tsx      # 后台录入新酒店表单 (路由: /admin/hotels/create)
+│   │       └── [id]/             
+│   │           └── page.tsx      # 后台编辑现有酒店表单 (路由: /admin/hotels/123)
 │   │
-│   ├── api/                  # API 路由 (供前端调用)
-│   │   ├── auth/             # (已有)
-│   │   ├── upload/           # 图片上传接口
-│   │   └── hotels/           # 如果不用 Server Actions，可在此写 RESTful 接口
-│   └── globals.css           # 全局样式 (Tailwind 引入)
+│   └── api/                      # 🔌 传统 API 路由目录
+│       └── auth/                 # 鉴权相关接口 (颁发 JWT Token 专属)
+│           ├── login/            
+│           │   └── route.ts      # 🔑 登录验证 API
+│           └── register/         
+│               └── route.ts      # 📝 注册账号 API
 │
-├── components/               # 通用 React 组件
-│   ├── client/               # 专用于移动端 C 端的组件
-│   │   ├── filter/           # 筛选相关组件 (FilterTabs, Dropdown)
-│   │   ├── hotel/            # 酒店相关 (HotelCard, SkeletonCard)
-│   │   └── ui/               # 基础 UI (InfiniteScroll, PullToRefresh)
-│   │
-│   ├── admin/                # 专用于 PC 端的后台组件
-│   │   ├── layout/           # Sidebar, AdminHeader
-│   │   └── hotel/            # HotelForm, RoomTypeDynamicForm
-│   │
-│   └── shared/               # 多端共享组件 (如有)
+├── components/                   # 🧩 React 业务与 UI 组件库
+│   ├── client/                   # C 端专属 (如: HotelCard.tsx, MobileFilter.tsx)
+│   ├── admin/                    # B 端专属 (如: AdminTable.tsx, RoomForm.tsx)
+│   └── shared/                   # 公用基础组件 (如: Button.tsx, Modal.tsx)
 │
-├── lib/                      # 核心工具库
-│   ├── db.ts                 # 数据库连接实例 (已有)
-│   ├── actions/              # (推荐) Next.js Server Actions 目录 (处理表单提交、数据库 CRUD)
-│   │   ├── hotel.actions.ts  # 酒店增删改查动作
-│   │   └── user.actions.ts   
-│   └── utils.ts              # 通用工具函数 (如类名合并 cn(), 日期格式化)
+├── lib/                          # 🛠️ 核心逻辑与工具函数
+│   ├── prisma.ts                 # 🌟 PrismaClient 单例 (全项目的数据库总闸门)
+│   ├── utils.ts                  # 通用函数 (如: cn 类名合并)
+│   └── actions/                  # ⚡️ Server Actions (完美替代 CRUD API)
+│       ├── hotel.actions.ts      # 酒店、房型的增删改查逻辑
+│       └── user.actions.ts       # 后台用户管理的增删改查逻辑
 │
-├── types/                    # TypeScript 类型定义
-│   ├── index.ts              # 数据库模型对应的 TS Interface (如 Hotel, RoomType)
-│   └── api.ts                # API 返回体类型定义
+├── prisma/                       # 🗄️ 数据库与 ORM 配置目录
+│   ├── schema.prisma             # 表结构定义 (采用逻辑纯数字关联，无物理外键)
+│   └── seed.ts                   # 种子数据脚本 (测试数据初始化)
 │
-└── package.json              # (已有)
+├── types/                        # 🏷️ TypeScript 全局类型定义
+│   ├── api.ts                    # 后端交互类型 (定义 ActionResponse, LoginResponse)
+│   └── index.ts                  # 类型集线器与聚合类型定义
+│
+└── .env                          # 🔐 环境变量配置 (请参考 .env.example)
 
+## 🚀 快速启动
 
-## Database
-
-### 环境要求
-- Node.js 18+
-- MySQL 5.7+
-- pnpm
-
-### 配置
-在 `.env` 文件中配置数据库连接：
-```env
-DATABASE_URL="mysql://root:123456@127.0.0.1:3306/hotel_db"
-```
-
-### 初始化数据库（全新环境）
+### 1. 安装依赖
 
 ```bash
-# 1. 创建空数据库
-mysql -u root -p123456 -e "CREATE DATABASE hotel_db;"
-
-# 2. 安装依赖
 pnpm install
+```
 
-# 3. 生成 Prisma Client
+### 2. 配置环境变量
+
+在根目录创建 `.env` 文件，并填入以下内容：
+
+```plaintext
+DATABASE_URL="mysql://用户名:密码@127.0.0.1:3306/hotel_db"
+JWT_SECRET="your-super-secret-jwt-key"
+```
+
+### 3. 初始化数据库与种子数据
+
+```bash
 pnpm prisma generate
-
-# 4. 创建迁移（仅生成 SQL，不执行）
-pnpm prisma migrate dev --name init --create-only
-
-# 5. [可选] 编辑迁移文件添加 COMMENT
-# 编辑 prisma/migrations/xxx/migration.sql 添加注释
-
-# 6. 执行迁移
-pnpm prisma migrate dev
-
-# 7. 填充种子数据（可选）
-pnpm db:seed
+pnpm prisma db push
+pnpm prisma db seed
 ```
 
-### 常用命令
+### 4. 启动开发服务器
 
-| 命令 | 说明 |
-|------|------|
-| `pnpm prisma generate` | 生成 Prisma Client |
-| `pnpm prisma db push` | 同步 schema 到数据库（开发环境） |
-| `pnpm prisma migrate dev` | 创建并应用迁移（开发环境） |
-| `pnpm prisma migrate deploy` | 应用迁移（生产环境） |
-| `pnpm prisma studio` | 打开可视化数据库管理 |
-| `pnpm db:seed` | 执行种子数据填充 |
-
-### 添加 COMMENT（数据库注释）
-
-Prisma 6.x 不直接支持 `@comment` 属性，需要手动编辑迁移 SQL 文件：
-
-1. 创建迁移：`pnpm prisma migrate dev --name init --create-only`
-2. 编辑 `prisma/migrations/xxx/migration.sql`，在 `CREATE TABLE` 语句中添加 `COMMENT`：
-```sql
-CREATE TABLE `users` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT COMMENT '唯一主键',
-    `username` VARCHAR(50) NOT NULL COMMENT '登录账号',
-    ...
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT='用户角色表';
+```bash
+pnpm dev
 ```
-3. 执行迁移：`pnpm prisma migrate dev`
 
-### 数据库表结构
+### 5. 访问入口
 
-| 表名 | 说明 |
-|------|------|
-| users | 用户角色表 |
-| hotels | 酒店基础信息表 |
-| hotel_rooms | 酒店房型与价格表 |
-
-### 种子数据
-
-运行 `pnpm db:seed` 会创建以下测试数据：
-- **用户**: merchant01 / 123456 (商户), admin01 / 123456 (管理员)
-- **酒店**: 上海陆家嘴禧玥酒店、艺龙安悦酒店、上海静安瑞吉酒店
-- **房型**: 高级大床房、江景双床房等
-
+- **C端访问入口**: http://localhost:3000/hotels
+- **B端管理入口**: http://localhost:3000/admin/auth
