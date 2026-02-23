@@ -40,7 +40,7 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 e-hotel-next/
 ├── app/
 │   ├── (client)/               # C端路由组
-│   │   ├── hotels/             # 酒店模块主目录 (只有一个 hotels！)
+│   │   ├── hotels/             # 酒店模块主目录
 │   │   │   ├── page.tsx        # 对应路由: /hotels (酒店列表页)
 │   │   │   ├── loading.tsx     # 列表页的加载骨架屏
 │   │   │   │
