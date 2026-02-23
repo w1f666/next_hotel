@@ -78,7 +78,7 @@ e-hotel-next/
 │   ├── api.ts                    # 后端交互类型 (定义 ActionResponse, LoginResponse)
 │   └── index.ts                  # 类型集线器与聚合类型定义
 │
-└── .env                          # 🔐 环境变量配置 (请参考 .env.example)
+└── .env                          # 🔐 环境变量配置 
 
 ## 🚀 快速启动
 
