@@ -11,9 +11,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: '所有字段都是必填的' }, { status: 400 });
     }
 
-    // 使用 Prisma 检查用户是否已存在
+    // 2. 检查用户是否已存在
     const existingUser = await prisma.user.findUnique({
-      where: { username }
+      where: { username },
     });
 
     if (existingUser) {
@@ -23,13 +23,13 @@ export async function POST(request: Request) {
     // 密码加密
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // 使用 Prisma 插入数据库
+    // 4. 插入数据库
     await prisma.user.create({
       data: {
         username,
         password: hashedPassword,
-        role: role
-      }
+        role,
+      },
     });
 
     return NextResponse.json({ message: '注册成功' }, { status: 201 });

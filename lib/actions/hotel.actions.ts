@@ -1,7 +1,54 @@
+'use server';
 /* 酒店增删改查 —— Server Actions (Prisma) */
 
 import prisma from '@/lib/prisma';
+import { ActionResponse } from '@/types/api';
+import type { Hotel } from '@prisma/client';
 import type { HotelFormData } from '@/types';
+
+/**
+ * 获取管理员酒店列表（已发布的酒店）
+ */
+export async function getAdminHotels(): Promise<ActionResponse<{ hotels: Pick<Hotel, 'id' | 'name' | 'address' | 'starRating' | 'minPrice' | 'coverImage' | 'status'>[] }>> {
+  try {
+    const hotels = await prisma.hotel.findMany({
+      where: {
+        status: 1, // 已发布的酒店
+      },
+      select: {
+        id: true,
+        name: true,
+        address: true,
+        starRating: true,
+        minPrice: true,
+        coverImage: true,
+        status: true
+      },
+    });
+    return { success: true, message: '获取酒店列表成功', data: { hotels } };
+  } catch (error) {
+    return { success: false, message: '获取酒店列表失败' };
+  }
+}
+
+/**
+ * 获取C端酒店列表（已发布的酒店，用于客户端展示）
+ */
+export async function getPublishedHotels() {
+  const hotels = await prisma.hotel.findMany({
+    where: {
+      status: 1, // 只获取已发布的酒店
+    },
+    orderBy: {
+      updatedAt: 'desc',
+    },
+  });
+  return hotels.map(serializeHotel);
+}
+
+// =====================================================
+// ========== 商户工作台函数（录入/编辑/修改）==========
+// =====================================================
 
 /**
  * 获取商户的酒店列表
@@ -176,12 +223,12 @@ export async function deleteHotel(hotelId: number) {
 function serializeHotel(hotel: any) {
   return {
     ...hotel,
-    minPrice: Number(hotel.minPrice),
+    minPrice: Number(hotel.minPrice) || 0,
     openingTime: hotel.openingTime ? hotel.openingTime.toISOString().split('T')[0] : null,
     facilities: Array.isArray(hotel.facilities) ? hotel.facilities : [],
     gallery: Array.isArray(hotel.gallery) ? hotel.gallery : [],
-    createdAt: hotel.createdAt.toISOString(),
-    updatedAt: hotel.updatedAt.toISOString(),
+    createdAt: hotel.createdAt?.toISOString ? hotel.createdAt.toISOString() : hotel.createdAt,
+    updatedAt: hotel.updatedAt?.toISOString ? hotel.updatedAt.toISOString() : hotel.updatedAt,
   };
 }
 

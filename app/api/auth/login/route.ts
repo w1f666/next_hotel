@@ -14,16 +14,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: '账号或密码不能为空' }, { status: 400 });
     }
 
-    // 使用 Prisma 查找用户
+    // 1. 根据用户名查找用户
     const user = await prisma.user.findUnique({
-      where: { username }
+      where: { username },
     });
 
     if (!user) {
       return NextResponse.json({ message: '账号或密码错误' }, { status: 401 });
     }
 
-    // 比对密码
+    // 2. 比对密码 (数据库里的哈希值 vs 用户输入的明文)
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
@@ -49,3 +49,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: '服务器内部错误' }, { status: 500 });
   }
 }
+

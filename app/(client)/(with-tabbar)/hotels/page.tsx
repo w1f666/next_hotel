@@ -1,19 +1,49 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Tabs, Input, DatePicker, Select, Button, Tag, Space, Typography } from 'antd';
-import { EnvironmentOutlined, SearchOutlined, AimOutlined, RightOutlined } from '@ant-design/icons';
+import React, { useState, useEffect } from 'react';
+import { Tabs, Input, DatePicker, Select, Button, Tag, Space, Typography, Card, Empty, Spin, Row, Col } from 'antd';
+import { EnvironmentOutlined, SearchOutlined, AimOutlined, RightOutlined, StarFilled } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import 'dayjs/locale/zh-cn';
 import Image from 'next/image';
+import Link from 'next/link';
 
 dayjs.locale('zh-cn');
 
 const { RangePicker } = DatePicker;
-const { Text } = Typography;
+const { Text, Title } = Typography;
+
+interface HotelItem {
+    id: number;
+    name: string;
+    address: string;
+    starRating: number;
+    minPrice: number;
+    coverImage: string | null;
+}
 
 export default function HotelSearchPage() {
     const [activeTab, setActiveTab] = useState('domestic');
+    const [hotels, setHotels] = useState<HotelItem[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    // 获取已发布的酒店列表
+    useEffect(() => {
+        const fetchHotels = async () => {
+            try {
+                const res = await fetch('/api/hotels?published=true');
+                const json = await res.json();
+                if (json.success && json.data) {
+                    setHotels(json.data);
+                }
+            } catch (error) {
+                console.error('获取酒店列表失败:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchHotels();
+    }, []);
 
     const tabsItems = [
         { key: 'domestic', label: '国内' },
@@ -87,7 +117,7 @@ export default function HotelSearchPage() {
                                 placeholder={['入住日期', '离店日期']}
                                 renderExtraFooter={() => (
                                     <div className="p-2 text-xs text-orange-500 bg-orange-50 select-none">
-                                        当前已过0点，如需今天凌晨6点前入住，请选择“今天凌晨”
+                                        当前已过0点，如需今天凌晨6点前入住，请选择"今天凌晨"
                                     </div>
                                 )}
                             />
@@ -143,7 +173,67 @@ export default function HotelSearchPage() {
                 </div>
             </div>
 
-            {/* 底部功能区 (可选) */}
+            {/* 酒店列表展示区域 */}
+            <div className="mt-8 px-4 max-w-4xl mx-auto w-full">
+                <Title level={4} className="mb-4">热门酒店</Title>
+                {loading ? (
+                    <div className="flex justify-center py-10">
+                        <Spin size="large" />
+                    </div>
+                ) : hotels.length === 0 ? (
+                    <Empty description="暂无酒店数据" />
+                ) : (
+                    <Row gutter={[16, 16]}>
+                        {hotels.map((hotel) => (
+                            <Col xs={24} sm={12} md={8} key={hotel.id}>
+                                <Link href={`/hotels/${hotel.id}`}>
+                                    <Card
+                                        hoverable
+                                        className="h-full overflow-hidden"
+                                        cover={
+                                            <div className="relative h-40">
+                                                <Image
+                                                    src={hotel.coverImage || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&q=80'}
+                                                    alt={hotel.name}
+                                                    fill
+                                                    className="object-cover"
+                                                />
+                                            </div>
+                                        }
+                                    >
+                                        <Card.Meta
+                                            title={
+                                                <div className="flex justify-between items-start">
+                                                    <span className="text-base font-semibold truncate">{hotel.name}</span>
+                                                    <span className="text-red-500 font-bold text-lg">
+                                                        ¥{hotel.minPrice}
+                                                        <span className="text-xs font-normal text-gray-400">起</span>
+                                                    </span>
+                                                </div>
+                                            }
+                                            description={
+                                                <div>
+                                                    <div className="flex items-center gap-1 text-gray-500 text-sm mb-1">
+                                                        <EnvironmentOutlined />
+                                                        <span className="truncate">{hotel.address}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-1">
+                                                        {Array.from({ length: hotel.starRating }, (_, i) => (
+                                                            <StarFilled key={i} className="text-yellow-400 text-xs" />
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            }
+                                        />
+                                    </Card>
+                                </Link>
+                            </Col>
+                        ))}
+                    </Row>
+                )}
+            </div>
+
+            {/* 底部功能区 */}
             <div className="mt-8 px-4 max-w-2xl mx-auto w-full grid grid-cols-2 gap-4">
                 <div className="bg-white p-4 rounded-xl shadow-sm flex items-center justify-between cursor-pointer hover:shadow-md transition-shadow">
                     <div>
