@@ -1,24 +1,3 @@
-/*管理列表(table)*/
-
-// app/admin/hotels/page.tsx
-import React from 'react';
-import { getAdminHotels } from '@/lib/actions/hotel.actions';
-import HotelTableClient from '@/components/admin/HotelTableClient'; 
-
-// 服务端组件：在服务器直接查数据库
-export default async function AdminHotelsPage() {
-  const res = await getAdminHotels();
-  const hotels = res.data?.hotels || [];
-
-  return (
-    <div className="p-6">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">酒店管理</h1>
-      </div>
-      
-      <HotelTableClient initialData={hotels} />
-    </div>
-  );
 'use client';
 
 import React, { useState } from 'react';
@@ -152,7 +131,7 @@ export default function HotelAuditPage() {
             dataIndex: 'name',
             key: 'name',
             render: (text: string, record: HotelRecord) => (
-                <Space orientation="vertical" size={0}>
+                <Space direction="vertical" size={0}>
                     <Text strong>{text}</Text>
                     <Text type="secondary" style={{ fontSize: '12px' }}>联系：{record.contact}</Text>
                 </Space>
@@ -238,26 +217,66 @@ export default function HotelAuditPage() {
     ];
 
     return (
-        <div style={{ background: '#fff', padding: 24, borderRadius: '8px' }}>
-            <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Title level={3} style={{ margin: 0 }}>酒店信息审核/发布列表</Title>
-                <Space>
-                    <Input placeholder="输入酒店名称" prefix={<SearchOutlined />} style={{ width: 250 }} />
-                    <Select placeholder="审核状态" style={{ width: 120 }} allowClear>
-                        <Select.Option value="auditing">审核中</Select.Option>
-                        <Select.Option value="approved">已通过</Select.Option>
-                        <Select.Option value="rejected">未通过</Select.Option>
-                    </Select>
-                    <Button type="primary">搜索</Button>
-                </Space>
-            </div>
+        <Layout style={{ minHeight: '100vh' }}>
+            {/* 侧边栏 */}
+            <Sider width={200} className="site-layout-background shadow-lg">
+                <div style={{ height: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#001529' }}>
+                    <Title level={4} style={{ color: 'white', margin: 0 }}>管理后台</Title>
+                </div>
+                <Menu
+                    mode="inline"
+                    defaultSelectedKeys={['hotel-audit']}
+                    style={{ height: 'calc(100% - 60px)', borderRight: 0 }}
+                    items={[
+                        { key: 'dashboard', icon: <DashboardOutlined />, label: '系统概览' },
+                        { key: 'hotel-audit', icon: <AuditOutlined />, label: '酒店信息审核' },
+                        { key: 'logout', icon: <LogoutOutlined />, label: '退出登录' },
+                    ]}
+                />
+            </Sider>
 
-            <Table
-                columns={columns}
-                dataSource={data}
-                pagination={{ pageSize: 10 }}
-                scroll={{ x: 800 }}
-            />
+            {/* 主体内容 */}
+            <Layout style={{ padding: '0 24px 24px' }}>
+                <Breadcrumb
+                    style={{ margin: '16px 0' }}
+                    items={[
+                        { title: '首页' },
+                        { title: '酒店管理' },
+                        { title: '信息审核' },
+                    ]}
+                />
+
+                <Content
+                    className="site-layout-background"
+                    style={{
+                        padding: 24,
+                        margin: 0,
+                        minHeight: 280,
+                        background: '#fff',
+                        borderRadius: '8px'
+                    }}
+                >
+                    <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Title level={3} style={{ margin: 0 }}>酒店信息审核/发布列表</Title>
+                        <Space>
+                            <Input placeholder="输入酒店名称" prefix={<SearchOutlined />} style={{ width: 250 }} />
+                            <Select placeholder="审核状态" style={{ width: 120 }} allowClear>
+                                <Select.Option value="auditing">审核中</Select.Option>
+                                <Select.Option value="approved">已通过</Select.Option>
+                                <Select.Option value="rejected">未通过</Select.Option>
+                            </Select>
+                            <Button type="primary">搜索</Button>
+                        </Space>
+                    </div>
+
+                    <Table
+                        columns={columns}
+                        dataSource={data}
+                        pagination={{ pageSize: 10 }}
+                        scroll={{ x: 800 }}
+                    />
+                </Content>
+            </Layout>
 
             {/* 审核弹窗 */}
             <Modal
@@ -280,6 +299,7 @@ export default function HotelAuditPage() {
                         </Select>
                     </Form.Item>
 
+                    {/* 实时监听状态显示原因输入框 */}
                     <Form.Item
                         noStyle
                         shouldUpdate={(prevValues, currentValues) => prevValues.status !== currentValues.status}
@@ -298,6 +318,18 @@ export default function HotelAuditPage() {
                     </Form.Item>
                 </Form>
             </Modal>
-        </div>
+
+            <style jsx global>{`
+        .ant-layout-sider {
+          background: #fff !important;
+        }
+        .ant-menu {
+          background: #fff !important;
+        }
+        .site-layout-background {
+          background: #fff;
+        }
+      `}</style>
+        </Layout>
     );
 }

@@ -3,7 +3,6 @@ import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
-// 你的 JWT 密钥，生产环境请务必放在 .env 中
 const JWT_SECRET = process.env.JWT_SECRET || 'default-secret-key-change-it';
 
 export async function POST(request: Request) {
@@ -31,15 +30,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: '账号或密码错误' }, { status: 401 });
     }
 
-    // 3. 生成 JWT Token
-    // payload 里面只存非敏感信息，比如 id, username, role
+    // 生成 JWT Token
     const token = jwt.sign(
       { userId: user.id, username: user.username, role: user.role },
       JWT_SECRET,
-      { expiresIn: '24h' } // token 24小时后过期
+      { expiresIn: '24h' }
     );
 
-    // 4. 返回结果
     return NextResponse.json({
       message: '登录成功',
       token,

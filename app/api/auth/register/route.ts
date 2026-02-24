@@ -7,7 +7,6 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { username, password, role } = body;
 
-    // 1. 后端基础校验
     if (!username || !password || !role) {
       return NextResponse.json({ message: '所有字段都是必填的' }, { status: 400 });
     }
@@ -21,8 +20,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: '该账号已被注册' }, { status: 409 });
     }
 
-    // 3. 密码加密 (Hash)
-    // 10 是 salt rounds，数字越大越安全但也越慢，10 是标准值
+    // 密码加密
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // 4. 插入数据库
