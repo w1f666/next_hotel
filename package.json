@@ -2,6 +2,7 @@
   "name": "e-hotel-next",
   "version": "0.1.0",
   "private": true,
+  "author": "jean030501 <2213154798@qq.com>",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -13,10 +14,14 @@
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@ant-design/cssinjs": "^2.1.0",
     "@ant-design/icons": "^6.1.0",
     "@prisma/client": "^6.19.2",
     "antd": "^6.2.2",
+    "antd-mobile": "5.42.3",
+    "antd-mobile-icons": "^0.3.0",
     "bcryptjs": "^3.0.3",
+    "dayjs": "^1.11.19",
     "jsonwebtoken": "^9.0.3",
     "mysql2": "^3.16.3",
     "next": "16.1.6",

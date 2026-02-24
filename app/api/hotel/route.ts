@@ -36,6 +36,7 @@ const MOCK_DB: HotelDetailResponse = {
     "https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?w=800&q=80",
   ],
   rooms: [
+    // 原始数据可以是乱序的，我们在接口层处理排序
     {
       id: "r2",
       name: "豪华大床房",
