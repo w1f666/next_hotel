@@ -2,7 +2,7 @@
 import React from 'react';
 import { Tag, Toast } from 'antd-mobile';
 import { EnvironmentOutline, StarFill } from 'antd-mobile-icons';
-import { HotelDetailResponse } from '../../../api/hotel/route';
+import { HotelDetailResponse } from '@/app/api/hotel/route';
 
 export default function HotelInfo({ hotel }: { hotel: HotelDetailResponse }) {
   

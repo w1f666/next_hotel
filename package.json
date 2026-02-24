@@ -19,6 +19,7 @@
     "@prisma/client": "^6.19.2",
     "antd": "^6.2.2",
     "antd-mobile": "5.42.3",
+    "antd-mobile-icons": "^0.3.0",
     "bcryptjs": "^3.0.3",
     "dayjs": "^1.11.19",
     "jsonwebtoken": "^9.0.3",
