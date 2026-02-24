@@ -29,10 +29,12 @@ interface AuthFormProps {
 
 // --- 正则表达式定义 ---
 const REGEX = {
-  // 账号：4-16位，字母/数字/下划线
-  username: /^[a-zA-Z0-9_]{4,16}$/,
-  // 密码：8-20位，必须包含字母、数字及特殊字符
-  password: /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,20}$/
+  // 账号：支持两种格式
+  // 1. 商户账号：merchant + 数字，如 merchant01, merchant02
+  // 2. 管理员账号：admin + 数字，如 admin01, admin02
+  username: /^(merchant|admin)\d{2}$/,
+  // 密码：6位数字，如 123456
+  password: /^\d{6}$/
 };
 
 // --- 1. LoginForm 组件 ---
@@ -53,7 +55,7 @@ const LoginForm: React.FC<AuthFormProps> = ({ loading, onFinish }) => {
         name="username"
         rules={[
           { required: true, message: '请输入您的账号!' },
-          { pattern: REGEX.username, message: '账号需为4-16位字母、数字或下划线' }
+          { pattern: REGEX.username, message: '账号格式：merchant01 或 admin01' }
         ]}
       >
         <Input prefix={<UserOutlined />} placeholder="请输入商户或管理员账号" size="large" />
@@ -64,7 +66,7 @@ const LoginForm: React.FC<AuthFormProps> = ({ loading, onFinish }) => {
         name="password"
         rules={[
           { required: true, message: '请输入您的密码!' },
-          { pattern: REGEX.password, message: '密码需8-20位并包含字母、数字及特殊字符' }
+          { pattern: REGEX.password, message: '密码为6位数字，如 123456' }
         ]}
       >
         <Input.Password prefix={<LockOutlined />} placeholder="请输入密码" size="large" />
@@ -98,7 +100,7 @@ const RegisterForm: React.FC<AuthFormProps> = ({ loading, onFinish }) => {
         name="username"
         rules={[
           { required: true, message: '请设置您的账号!' },
-          { pattern: REGEX.username, message: '账号需为4-16位字母、数字或下划线' }
+          { pattern: REGEX.username, message: '账号格式：merchant01 或 admin01' }
         ]}
       >
         <Input prefix={<UserOutlined />} placeholder="设置账号" size="large" />
@@ -109,7 +111,7 @@ const RegisterForm: React.FC<AuthFormProps> = ({ loading, onFinish }) => {
         name="password"
         rules={[
           { required: true, message: '请设置密码!' },
-          { pattern: REGEX.password, message: '密码需8-20位并包含字母、数字及特殊字符' }
+          { pattern: REGEX.password, message: '密码为6位数字，如 123456' }
         ]}
       >
         <Input.Password prefix={<LockOutlined />} placeholder="设置密码" size="large" />

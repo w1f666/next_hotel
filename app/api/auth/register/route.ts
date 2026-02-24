@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
-import pool from '@/lib/db';
+import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
-import { RowDataPacket } from 'mysql2';
 
 export async function POST(request: Request) {
   try {
@@ -14,13 +13,11 @@ export async function POST(request: Request) {
     }
 
     // 2. 检查用户是否已存在
-    // query 返回的是 [rows, fields]，我们需要第一项 rows
-    const [existingUsers] = await pool.query<RowDataPacket[]>(
-      'SELECT id FROM users WHERE username = ?',
-      [username]
-    );
+    const existingUser = await prisma.user.findUnique({
+      where: { username },
+    });
 
-    if (existingUsers.length > 0) {
+    if (existingUser) {
       return NextResponse.json({ message: '该账号已被注册' }, { status: 409 });
     }
 
@@ -29,10 +26,13 @@ export async function POST(request: Request) {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // 4. 插入数据库
-    await pool.query(
-      'INSERT INTO users (username, password, role) VALUES (?, ?, ?)',
-      [username, hashedPassword, role]
-    );
+    await prisma.user.create({
+      data: {
+        username,
+        password: hashedPassword,
+        role,
+      },
+    });
 
     return NextResponse.json({ message: '注册成功' }, { status: 201 });
 

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import prisma from '@/lib/prisma';
 
 export interface Room {
   id: string;
@@ -22,87 +23,112 @@ export interface HotelDetailResponse {
   rooms: Room[];
 }
 
-// 模拟数据库数据
-const MOCK_DB: HotelDetailResponse = {
-  id: "1",
-  name: "上海陆家嘴禧玥酒店",
-  rating: 4.8,
-  address: "上海浦东新区浦明路1111号",
-  tags: ["免费停车", "健身房", "免费WIFI", "近地铁", "机器人服务"],
-  openYear: "2020",
-  images: [
-    "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&q=80",
-    "https://images.unsplash.com/photo-1582719508461-905c673771fd?w=800&q=80",
-    "https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?w=800&q=80",
-  ],
-  rooms: [
-    {
-      id: "r2",
-      name: "豪华大床房",
-      tags: ["含早", "免费取消"],
-      price: 1200,
-      currency: "¥",
-      size: "50㎡",
-      bed: "1张2米特大床",
-      imageUrl: "https://images.unsplash.com/photo-1611892440504-42a792e24d32?w=400&q=80"
-    },
-    {
-      id: "r1",
-      name: "经典双床房",
-      tags: ["含早", "立即确认"],
-      price: 936,
-      currency: "¥",
-      size: "40㎡",
-      bed: "2张1.2米单人床",
-      imageUrl: "https://img95.699pic.com/photo/60056/6212.jpg_wh860.jpg"
-    },
-    {
-      id: "r3",
-      name: "行政套房",
-      tags: ["行政礼遇", "全景落地窗", "浴缸"],
-      price: 2500,
-      currency: "¥",
-      size: "80㎡",
-      bed: "1张2米特大床",
-      imageUrl: "https://images.unsplash.com/photo-1578683010236-d716f9a3f461?w=400&q=80"
-    }
-  ]
-};
-
 /**
  * 获取酒店详情（供客户端组件直接调用）
  */
-export const getHotelDetail = (id: string): Promise<HotelDetailResponse> => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      if (!id) {
-        reject(new Error("Invalid ID"));
-        return;
-      }
-      const sortedRooms = [...MOCK_DB.rooms].sort((a, b) => a.price - b.price);
-      resolve({ ...MOCK_DB, id, rooms: sortedRooms });
-    }, 500);
+export const getHotelDetail = async (id: string): Promise<HotelDetailResponse> => {
+  if (!id) {
+    throw new Error("Invalid ID");
+  }
+
+  const hotel = await prisma.hotel.findUnique({
+    where: { id: Number(id) },
   });
+
+  if (!hotel) {
+    throw new Error("Hotel not found");
+  }
+
+  const rooms = await prisma.hotelRoom.findMany({
+    where: { hotelId: Number(id) },
+    orderBy: { price: 'asc' },
+  });
+
+  // 序列化数据以匹配前端期望的格式
+  const facilities = (hotel.facilities as string[]) || [];
+  const gallery = (hotel.gallery as string[]) || [];
+  const coverImage = hotel.coverImage || '';
+
+  return {
+    id: String(hotel.id),
+    name: hotel.name,
+    rating: hotel.starRating * 0.96, // 根据星级生成模拟评分
+    address: hotel.address,
+    tags: facilities,
+    images: gallery.length > 0 ? gallery : [coverImage].filter(Boolean),
+    openYear: hotel.openingTime ? hotel.openingTime.getFullYear().toString() : '',
+    rooms: rooms.map((room) => ({
+      id: String(room.id),
+      name: room.roomName,
+      tags: [
+        ...(room.hasBreakfast ? ['含早'] : []),
+        room.cancelPolicy || '',
+      ].filter((tag): tag is string => !!tag),
+      price: Number(room.price),
+      currency: '¥',
+      size: '',
+      bed: room.bedInfo || '',
+      imageUrl: '',
+    })),
+  };
 };
 
 /**
- * GET /api/hotel?id=xxx — 获取酒店详情（模拟数据）
+ * GET /api/hotel?id=xxx — 获取酒店详情（真实数据库）
  */
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const id = searchParams.get('id') || '1';
+  const id = searchParams.get('id');
 
-  // 模拟延迟
-  await new Promise((resolve) => setTimeout(resolve, 300));
+  if (!id) {
+    return NextResponse.json({ message: '缺少酒店ID' }, { status: 400 });
+  }
 
-  // 房型价格从低到高排序
-  const sortedRooms = [...MOCK_DB.rooms].sort((a, b) => a.price - b.price);
+  try {
+    const hotel = await prisma.hotel.findUnique({
+      where: { id: Number(id) },
+    });
 
-  const response = {
-    ...MOCK_DB,
-    id,
-    rooms: sortedRooms,
-  };
+    if (!hotel) {
+      return NextResponse.json({ message: '酒店不存在' }, { status: 404 });
+    }
 
-  return NextResponse.json(response);
+    const rooms = await prisma.hotelRoom.findMany({
+      where: { hotelId: Number(id) },
+      orderBy: { price: 'asc' },
+    });
+
+    // 序列化数据
+    const facilities = (hotel.facilities as string[]) || [];
+    const gallery = (hotel.gallery as string[]) || [];
+    const coverImage = hotel.coverImage || '';
+
+    const response: HotelDetailResponse = {
+      id: String(hotel.id),
+      name: hotel.name,
+      rating: hotel.starRating * 0.96,
+      address: hotel.address,
+      tags: facilities,
+      images: gallery.length > 0 ? gallery : [coverImage].filter(Boolean),
+      openYear: hotel.openingTime ? hotel.openingTime.getFullYear().toString() : '',
+      rooms: rooms.map((room) => ({
+        id: String(room.id),
+        name: room.roomName,
+        tags: [
+          ...(room.hasBreakfast ? ['含早'] : []),
+          room.cancelPolicy || '',
+        ].filter((tag): tag is string => !!tag),
+        price: Number(room.price),
+        currency: '¥',
+        size: '',
+        bed: room.bedInfo || '',
+        imageUrl: '',
+      })),
+    };
+
+    return NextResponse.json(response);
+  } catch (error) {
+    console.error('获取酒店详情失败:', error);
+    return NextResponse.json({ message: '服务器内部错误' }, { status: 500 });
+  }
 }

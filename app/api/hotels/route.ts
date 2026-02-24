@@ -1,18 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAllHotels, getHotelsByMerchant, createHotel } from '@/lib/actions/hotel.actions';
+import { getAllHotels, getHotelsByMerchant, getPublishedHotels, createHotel } from '@/lib/actions/hotel.actions';
 
 /**
  * GET /api/hotels — 获取酒店列表
- * 查询参数: merchantId, page, pageSize, status, keyword
+ * 查询参数: 
+ *   - merchantId: 商户ID（返回该商户的酒店）
+ *   - published: true/false（返回已发布的酒店，用于C端）
+ *   - page, pageSize, status, keyword: 分页和筛选参数
  */
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const merchantId = searchParams.get('merchantId');
+    const published = searchParams.get('published');
     const page = Number(searchParams.get('page') || 1);
     const pageSize = Number(searchParams.get('pageSize') || 10);
     const status = searchParams.get('status');
     const keyword = searchParams.get('keyword') || '';
+
+    // 如果指定了 published=true，返回已发布的酒店（用于C端）
+    if (published === 'true') {
+      const hotels = await getPublishedHotels();
+      return NextResponse.json({ success: true, data: hotels });
+    }
 
     // 如果指定了 merchantId，返回该商户的酒店
     if (merchantId) {
