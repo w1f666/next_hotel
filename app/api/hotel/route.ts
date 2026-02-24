@@ -1,3 +1,5 @@
+import { NextRequest, NextResponse } from 'next/server';
+
 export interface Room {
   id: string;
   name: string;
@@ -69,28 +71,39 @@ const MOCK_DB: HotelDetailResponse = {
 };
 
 /**
- * 获取酒店详情
- * 模拟后端业务逻辑：包含网络延迟和数据排序
+ * 获取酒店详情（供客户端组件直接调用）
  */
 export const getHotelDetail = (id: string): Promise<HotelDetailResponse> => {
   return new Promise((resolve, reject) => {
-    // 模拟 500ms 延迟
     setTimeout(() => {
       if (!id) {
         reject(new Error("Invalid ID"));
         return;
       }
-      
-      // 核心业务逻辑：房型价格从低到高排序 
-      // 使用扩展运算符复制数组，避免修改原数据
       const sortedRooms = [...MOCK_DB.rooms].sort((a, b) => a.price - b.price);
-      
-      const response = {
-        ...MOCK_DB,
-        rooms: sortedRooms
-      };
-      
-      resolve(response);
+      resolve({ ...MOCK_DB, id, rooms: sortedRooms });
     }, 500);
   });
 };
+
+/**
+ * GET /api/hotel?id=xxx — 获取酒店详情（模拟数据）
+ */
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get('id') || '1';
+
+  // 模拟延迟
+  await new Promise((resolve) => setTimeout(resolve, 300));
+
+  // 房型价格从低到高排序
+  const sortedRooms = [...MOCK_DB.rooms].sort((a, b) => a.price - b.price);
+
+  const response = {
+    ...MOCK_DB,
+    id,
+    rooms: sortedRooms,
+  };
+
+  return NextResponse.json(response);
+}

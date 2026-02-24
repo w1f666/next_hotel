@@ -2,7 +2,8 @@
 
 import React from 'react';
 import { Button, Toast, Image } from 'antd-mobile';
-import { Room } from '../../../api/hotel/route';
+import { Room } from '@/app/api/hotel/route';
+
 
 export default function RoomList({ rooms }: { rooms: Room[] }) {
   
