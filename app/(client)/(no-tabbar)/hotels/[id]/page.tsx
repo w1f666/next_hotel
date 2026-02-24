@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { Toast, Skeleton, ErrorBlock, CalendarPicker } from "antd-mobile";
 import { unstableSetRender } from 'antd-mobile';
-import { createRoot } from 'react-dom/client';
+import { createRoot, type Root } from 'react-dom/client';
 
 import { getHotelDetail, HotelDetailResponse } from "@/app/api/hotel/route";
 import HotelNavBar from "./components/HotelNavBar";
@@ -13,8 +13,9 @@ import HotelInfo from "./components/HotelInfo";
 import RoomList from "./components/RoomList";
 
 // --- React 19 兼容性补丁 ---
-unstableSetRender((node, container) => {
-  const root = createRoot(container as HTMLElement);
+// antd-mobile 的 unstableSetRender 在类型层面已标记废弃，但对 React 19 仍需要此兼容性设置。
+unstableSetRender((node: React.ReactNode, container: Element | DocumentFragment) => {
+  const root: Root = createRoot(container as HTMLElement);
   root.render(node);
   return async () => {
     root.unmount();
@@ -149,12 +150,12 @@ export default function HotelDetailPage() {
         visible={calendarVisible}
         value={dateRange}
         min={getToday()}
-        onChange={(val) => {
+        onChange={(val: [Date, Date] | null) => {
           if (val) {
-            setDateRange(val as [Date, Date]);
+            setDateRange(val);
           }
         }}
-        onConfirm={(val) => {
+        onConfirm={(val: [Date, Date] | null) => {
           if (!val) return;
           setDateRange(val);
           setCalendarVisible(false);
