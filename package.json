@@ -2,6 +2,7 @@
   "name": "e-hotel-next",
   "version": "0.1.0",
   "private": true,
+  "author": "jean030501 <2213154798@qq.com>",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
