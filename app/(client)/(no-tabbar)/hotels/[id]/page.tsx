@@ -106,7 +106,7 @@ export default function HotelDetailPage() {
 
   return (
     <div className="bg-[#f5f5f5] min-h-screen pb-safe">
-      <HotelNavBar title={data.name} />
+      {/* <HotelNavBar title={data.name} /> */}
 
       <HotelBanner images={data.images} />
 
