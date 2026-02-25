@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Layout, Spin, Typography } from 'antd';
+import { Layout, Spin, Typography, App } from 'antd';
 import { useRouter, usePathname } from 'next/navigation';
 
 const { Header, Content } = Layout;
@@ -45,7 +45,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         return (
             <Layout style={{ minHeight: '100vh' }}>
                 <Content style={{ background: '#f0f2f5' }}>
-                    {children}
+                    <App>
+                        {children}
+                    </App>
                 </Content>
             </Layout>
         );
@@ -79,35 +81,37 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
     return (
         <Layout style={{ minHeight: '100vh' }}>
-            <Header
-                style={{
-                    background: '#fff',
-                    padding: '0 24px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    borderBottom: '1px solid #f0f0f0',
-                    position: 'sticky',
-                    top: 0,
-                    zIndex: 100,
-                }}
-            >
-                <Title level={4} style={{ margin: 0, color: '#333' }}>
-                    {userRole === 'admin' ? '审核管理' : '商户工作台'}
-                </Title>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                    <span style={{ color: '#666' }}>欢迎登入, {getWelcomeText()}</span>
-                    <a 
-                        onClick={handleLogout}
-                        style={{ cursor: 'pointer', color: '#ff4d4f' }}
-                    >
-                        退出登录
-                    </a>
-                </div>
-            </Header>
-            <Content style={{ padding: '24px', background: '#f5f7fa', minHeight: 'calc(100vh - 64px)' }}>
-                {children}
-            </Content>
+            <App>
+                <Header
+                    style={{
+                        background: '#fff',
+                        padding: '0 24px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        borderBottom: '1px solid #f0f0f0',
+                        position: 'sticky',
+                        top: 0,
+                        zIndex: 100,
+                    }}
+                >
+                    <Title level={4} style={{ margin: 0, color: '#333' }}>
+                        {userRole === 'admin' ? '审核管理' : '商户工作台'}
+                    </Title>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                        <span style={{ color: '#666' }}>欢迎登入, {getWelcomeText()}</span>
+                        <a 
+                            onClick={handleLogout}
+                            style={{ cursor: 'pointer', color: '#ff4d4f' }}
+                        >
+                            退出登录
+                        </a>
+                    </div>
+                </Header>
+                <Content style={{ padding: '24px', background: '#f5f7fa', minHeight: 'calc(100vh - 64px)' }}>
+                    {children}
+                </Content>
+            </App>
         </Layout>
     );
 }

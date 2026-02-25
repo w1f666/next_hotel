@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Form, Input, Button, Radio, Tabs, Card, message, Typography } from 'antd';
+import { Form, Input, Button, Radio, Tabs, Card, message, Typography, App } from 'antd';
 import { UserOutlined, LockOutlined, ShopOutlined, TeamOutlined } from '@ant-design/icons';
 import type { TabsProps } from 'antd';
 import { useRouter } from 'next/navigation';
@@ -162,6 +162,7 @@ const RegisterForm: React.FC<AuthFormProps> = ({ loading, onFinish }) => {
 
 // --- 主页面组件 ---
 export default function AdminAuthPage(){
+  const { message } = App.useApp();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<string>('login');
   const [loading, setLoading] = useState<boolean>(false);
