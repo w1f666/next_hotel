@@ -9,26 +9,14 @@ import type { HotelFormData } from '@/types';
 /**
  * 获取管理员酒店列表（所有酒店，用于审核管理）
  */
-export async function getAdminHotels(): Promise<ActionResponse<{ hotels: Pick<Hotel, 'id' | 'name' | 'address' | 'starRating' | 'minPrice' | 'coverImage' | 'status' | 'rejectReason' | 'createdAt' | 'updatedAt'>[] }>> {
+export async function getAdminHotels(): Promise<ActionResponse<{ hotels: any[] }>> {
   try {
     const hotels = await prisma.hotel.findMany({
       orderBy: {
         updatedAt: 'desc',
       },
-      select: {
-        id: true,
-        name: true,
-        address: true,
-        starRating: true,
-        minPrice: true,
-        coverImage: true,
-        status: true,
-        rejectReason: true,
-        createdAt: true,
-        updatedAt: true,
-      },
     });
-    return { success: true, message: '获取酒店列表成功', data: { hotels } };
+    return { success: true, message: '获取酒店列表成功', data: { hotels: hotels.map(serializeHotel) } };
   } catch (error) {
     return { success: false, message: '获取酒店列表失败' };
   }

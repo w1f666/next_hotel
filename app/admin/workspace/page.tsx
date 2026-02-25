@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   Table, Tag, Space, Button, Typography, Input, Empty, Card,
-  Statistic, Row, Col, Popconfirm, message, Skeleton, Badge,
+  Statistic, Row, Col, Popconfirm, message, Skeleton, Badge, Flex,
 } from 'antd';
 import {
   PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined,
@@ -136,7 +136,7 @@ export default function WorkspacePage() {
           2: <CloseCircleOutlined />,
         };
         return (
-          <Space direction="vertical" size={2}>
+          <Flex vertical gap={2}>
             <Tag icon={iconMap[record.status]} color={statusInfo.color}>
               {statusInfo.label}
             </Tag>
@@ -145,7 +145,7 @@ export default function WorkspacePage() {
                 原因：{record.rejectReason}
               </Text>
             )}
-          </Space>
+          </Flex>
         );
       },
     },
@@ -274,7 +274,7 @@ export default function WorkspacePage() {
                   </Space>
                 }
                 value={item.value}
-                valueStyle={{ color: item.color, fontWeight: 700 }}
+                styles={{ content: { color: item.color, fontWeight: 700 } }}
               />
             </Card>
           </Col>

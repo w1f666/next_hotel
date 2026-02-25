@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import {
   Form, Input, Select, DatePicker, InputNumber, Switch, Button,
   Card, Space, Divider, Tag, Typography, Row, Col, message, Tooltip,
-  Upload, Modal,
+  Upload, Modal, App,
 } from 'antd';
 import {
   PlusOutlined, DeleteOutlined, HomeOutlined, EnvironmentOutlined,
@@ -47,6 +47,7 @@ const SectionHeader: React.FC<{ icon: React.ReactNode; title: string; subtitle?:
 );
 
 const HotelForm: React.FC<HotelFormProps> = ({ initialData, onSubmit, loading, mode }) => {
+  const { message } = App.useApp();
   const [form] = Form.useForm();
   const [uploading, setUploading] = useState(false);
   const [coverImageUrl, setCoverImageUrl] = useState<string>(initialData?.coverImage || '');
@@ -83,25 +84,33 @@ const HotelForm: React.FC<HotelFormProps> = ({ initialData, onSubmit, loading, m
     return false; // 阻止默认上传行为
   };
 
-  // 处理相册上传
-  const handleGalleryUpload = async (file: File) => {
+  // 处理相册上传 - 支持多文件同时上传
+  const handleGalleryUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    
+    const fileArray = Array.from(files);
     const formData = new FormData();
-    formData.append('file', file);
+    
+    // 添加所有文件到 FormData
+    fileArray.forEach((file) => {
+      formData.append('files', file);
+    });
     
     setUploading(true);
     try {
       const res = await fetch('/api/upload', {
-        method: 'POST',
+        method: 'PUT',
         body: formData,
       });
       const json = await res.json();
       
-      if (json.success) {
-        const url = json.data.url;
-        const newGalleryUrls = [...galleryUrls, url];
+      if (json.success && json.data) {
+        // 批量上传成功，获取所有返回的URL
+        const uploadedUrls = json.data.map((item: any) => item.url);
+        const newGalleryUrls = [...galleryUrls, ...uploadedUrls];
         setGalleryUrls(newGalleryUrls);
         form.setFieldsValue({ gallery: newGalleryUrls.join('\n') });
-        message.success('图片上传成功');
+        message.success(`成功上传 ${uploadedUrls.length} 张图片`);
       } else {
         message.error(json.message || '上传失败');
       }
@@ -388,9 +397,7 @@ const HotelForm: React.FC<HotelFormProps> = ({ initialData, onSubmit, loading, m
                 id="gallery-upload"
                 onChange={(e) => {
                   const files = e.target.files;
-                  if (files) {
-                    Array.from(files).forEach(file => handleGalleryUpload(file));
-                  }
+                  handleGalleryUpload(files);
                   e.target.value = '';
                 }}
               />

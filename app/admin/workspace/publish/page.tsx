@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Typography, Breadcrumb, message, Button, Space } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Typography, Breadcrumb, message, Button, Space, Spin } from 'antd';
 import { ArrowLeftOutlined, HomeOutlined, EditOutlined } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
 import HotelForm from '../_components/HotelForm';
@@ -12,11 +12,38 @@ const { Title, Paragraph } = Typography;
 export default function PublishHotelPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [merchantId, setMerchantId] = useState<number | null>(null);
+  const [isChecking, setIsChecking] = useState(true);
 
-  // 从登录态获取 merchantId
-  const merchantId = typeof window !== 'undefined' ? Number(localStorage.getItem('userId')) : 0;
+  useEffect(() => {
+    // 从登录态获取 merchantId
+    const userId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
+    
+    if (!userId) {
+      // 用户未登录，跳转到登录页
+      message.error('请先登录');
+      router.push('/admin/auth');
+      return;
+    }
+    
+    const id = Number(userId);
+    if (isNaN(id) || id === 0) {
+      message.error('商户ID无效，请重新登录');
+      router.push('/admin/auth');
+      return;
+    }
+    
+    setMerchantId(id);
+    setIsChecking(false);
+  }, [router]);
 
   const handleSubmit = async (formData: HotelFormData) => {
+    if (!merchantId) {
+      message.error('商户ID无效，请重新登录');
+      router.push('/admin/auth');
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await fetch('/api/hotels', {
@@ -39,6 +66,16 @@ export default function PublishHotelPage() {
       setLoading(false);
     }
   };
+
+  // 检查用户登录状态期间显示加载
+  if (isChecking) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh', flexDirection: 'column', gap: 16 }}>
+        <Spin size="large" />
+        <span style={{ color: '#999' }}>检查登录状态...</span>
+      </div>
+    );
+  }
 
   return (
     <div style={{ maxWidth: 960, margin: '0 auto' }}>
