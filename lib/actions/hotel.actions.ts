@@ -7,13 +7,13 @@ import type { Hotel } from '@prisma/client';
 import type { HotelFormData } from '@/types';
 
 /**
- * 获取管理员酒店列表（已发布的酒店）
+ * 获取管理员酒店列表（所有酒店，用于审核管理）
  */
-export async function getAdminHotels(): Promise<ActionResponse<{ hotels: Pick<Hotel, 'id' | 'name' | 'address' | 'starRating' | 'minPrice' | 'coverImage' | 'status'>[] }>> {
+export async function getAdminHotels(): Promise<ActionResponse<{ hotels: Pick<Hotel, 'id' | 'name' | 'address' | 'starRating' | 'minPrice' | 'coverImage' | 'status' | 'rejectReason' | 'createdAt' | 'updatedAt'>[] }>> {
   try {
     const hotels = await prisma.hotel.findMany({
-      where: {
-        status: 1, // 已发布的酒店
+      orderBy: {
+        updatedAt: 'desc',
       },
       select: {
         id: true,
@@ -22,7 +22,10 @@ export async function getAdminHotels(): Promise<ActionResponse<{ hotels: Pick<Ho
         starRating: true,
         minPrice: true,
         coverImage: true,
-        status: true
+        status: true,
+        rejectReason: true,
+        createdAt: true,
+        updatedAt: true,
       },
     });
     return { success: true, message: '获取酒店列表成功', data: { hotels } };
@@ -216,6 +219,39 @@ export async function deleteHotel(hotelId: number) {
   await prisma.hotelRoom.deleteMany({ where: { hotelId } });
   await prisma.hotel.delete({ where: { id: hotelId } });
   return true;
+}
+
+/**
+ * 审核酒店 - 通过
+ */
+export async function approveHotel(hotelId: number): Promise<ActionResponse> {
+  try {
+    await prisma.hotel.update({
+      where: { id: hotelId },
+      data: { status: 1 },
+    });
+    return { success: true, message: '审核通过' };
+  } catch (error) {
+    return { success: false, message: '操作失败' };
+  }
+}
+
+/**
+ * 审核酒店 - 拒绝
+ */
+export async function rejectHotel(hotelId: number, reason: string): Promise<ActionResponse> {
+  try {
+    await prisma.hotel.update({
+      where: { id: hotelId },
+      data: { 
+        status: 2,
+        rejectReason: reason,
+      },
+    });
+    return { success: true, message: '已拒绝' };
+  } catch (error) {
+    return { success: false, message: '操作失败' };
+  }
 }
 
 // ---- 序列化工具 ----

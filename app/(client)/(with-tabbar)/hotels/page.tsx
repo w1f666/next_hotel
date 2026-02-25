@@ -65,7 +65,7 @@ export default function HotelSearchPage() {
             {/* 顶部 Banner */}
             <div className="relative w-full h-48 sm:h-64 bg-blue-600 overflow-hidden cursor-pointer group" onClick={() => console.log('Navigate to promo')}>
                 <Image
-                    src="https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=2070&auto=format&fit=crop"
+                    src="/hotel_img/hotel1.png"
                     alt="Luxury Hotel"
                     fill
                     className="object-cover opacity-60 group-hover:scale-105 transition-transform duration-700"
@@ -193,7 +193,7 @@ export default function HotelSearchPage() {
                                         cover={
                                             <div className="relative h-40">
                                                 <Image
-                                                    src={hotel.coverImage || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&q=80'}
+                                                    src={hotel.coverImage || '/hotel_img/hotel1.png'}
                                                     alt={hotel.name}
                                                     fill
                                                     className="object-cover"
