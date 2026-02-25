@@ -33,8 +33,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         const currentPath = pathname;
         const targetPath = role === 'merchant' ? '/admin/workspace' : '/admin/hotels';
         
-        // 如果当前不在目标页面，则跳转
-        if (currentPath !== targetPath) {
+        // 如果当前不在目标页面（也不是目标页面的子页面），则跳转
+        // 例如：/admin/workspace 是目标页面，/admin/workspace/publish 是子页面，不跳转
+        if (!currentPath.startsWith(targetPath)) {
             router.push(targetPath);
         }
     }, [router, pathname]);

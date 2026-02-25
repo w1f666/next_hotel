@@ -202,13 +202,6 @@ export default function HotelTableClient({ initialData, onDeleted, onUpdated }: 
 
   return (
     <div className="bg-white p-4 rounded-lg shadow-sm">
-      <div className="mb-4 flex justify-end">
-        <Link href="/admin/workspace/publish">
-          <Button type="primary" icon={<PlusOutlined />}>
-            录入新酒店
-          </Button>
-        </Link>
-      </div>
       <Table 
         columns={columns} 
         dataSource={initialData} 

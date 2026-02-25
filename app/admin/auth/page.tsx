@@ -183,9 +183,10 @@ export default function AdminAuthPage(){
       }
 
       message.success('登录成功');
-      // 存储 token 和 role
+      // 存储 token、role 和 userId
       localStorage.setItem('token', data.token);
       localStorage.setItem('role', data.role);
+      localStorage.setItem('userId', data.userId);
       
       // 根据角色跳转到不同页面
       if (data.role === 'admin') {

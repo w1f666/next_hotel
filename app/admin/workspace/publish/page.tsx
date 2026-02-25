@@ -13,8 +13,8 @@ export default function PublishHotelPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
-  // 暂时使用 merchantId=1，后续接入登录态
-  const MERCHANT_ID = 1;
+  // 从登录态获取 merchantId
+  const merchantId = typeof window !== 'undefined' ? Number(localStorage.getItem('userId')) : 0;
 
   const handleSubmit = async (formData: HotelFormData) => {
     setLoading(true);
@@ -22,7 +22,7 @@ export default function PublishHotelPage() {
       const res = await fetch('/api/hotels', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ merchantId: MERCHANT_ID, ...formData }),
+        body: JSON.stringify({ merchantId, ...formData }),
       });
       const json = await res.json();
 
