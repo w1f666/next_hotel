@@ -1,19 +1,24 @@
 "use client";
-
+import 'antd-mobile/es/global';
 import React, { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { Toast, Skeleton, ErrorBlock, CalendarPicker } from "antd-mobile";
 import { unstableSetRender } from 'antd-mobile';
 import { createRoot, type Root } from 'react-dom/client';
-
-import { getHotelDetail, HotelDetailResponse } from "@/app/api/hotel/route";
 import HotelNavBar from "./components/HotelNavBar";
 import HotelBanner from "./components/HotelBanner";
 import HotelInfo from "./components/HotelInfo";
 import RoomList from "./components/RoomList";
 
+export interface HotelDetailResponse {
+  id: number | string;
+  name: string;
+  images?: string[]; //  标记为可选
+  rooms?: any[];     //  标记为可选
+  [key: string]: any; 
+}
+
 // --- React 19 兼容性补丁 ---
-// antd-mobile 的 unstableSetRender 在类型层面已标记废弃，但对 React 19 仍需要此兼容性设置。
 unstableSetRender((node: React.ReactNode, container: Element | DocumentFragment) => {
   const root: Root = createRoot(container as HTMLElement);
   root.render(node);
@@ -23,8 +28,6 @@ unstableSetRender((node: React.ReactNode, container: Element | DocumentFragment)
 });
 
 // --- 辅助函数 ---
-
-// 1. 获取“今天”的 0点0分0秒，避免因为时间精度导致当天无法点击
 const getToday = () => {
   const now = new Date();
   return new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -48,7 +51,6 @@ export default function HotelDetailPage() {
   
   const [calendarVisible, setCalendarVisible] = useState(false);
   
-  // 默认选中今天和明天
   const [dateRange, setDateRange] = useState<[Date, Date]>(() => {
     const today = getToday(); 
     const tomorrow = new Date(today);
@@ -63,10 +65,22 @@ export default function HotelDetailPage() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const result = await getHotelDetail(hotelId);
-        setData(result);
+        const response = await fetch(`/api/hotels/${hotelId}`); 
+        
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+
+        const result = await response.json();
+        // console.log("酒店数据：", result.data);
+        // console.log("rooms 数据：", result.data.rooms);
+        if (result.success) {
+          setData(result.data);
+        } else {
+          throw new Error(result.message || '获取数据失败');
+        }
       } catch (err) {
-        console.error(err);
+        console.error("Fetch hotel detail failed:", err);
         setError(true);
       } finally {
         setLoading(false);
@@ -108,7 +122,8 @@ export default function HotelDetailPage() {
     <div className="bg-[#f5f5f5] min-h-screen pb-safe">
       {/* <HotelNavBar title={data.name} /> */}
 
-      <HotelBanner images={data.images} />
+      {/* ✅ 核心修复点：加上 || [] 防止 map 报错 */}
+      <HotelBanner images={data.gallery || []} />
 
       <main className="px-3 relative -mt-4 z-10 space-y-3 pb-8">
         <HotelInfo hotel={data} />
@@ -140,11 +155,10 @@ export default function HotelDetailPage() {
         </div>
 
         <div className="mt-2">
-           <RoomList rooms={data.rooms} />
+           <RoomList rooms={data.rooms || []} />
         </div>
       </main>
 
-      
       <CalendarPicker
         selectionMode="range"
         visible={calendarVisible}
