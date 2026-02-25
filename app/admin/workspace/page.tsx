@@ -86,7 +86,7 @@ export default function WorkspacePage() {
               borderRadius: 10,
               background: record.coverImage
                 ? `url(${record.coverImage}) center/cover`
-                : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                : 'url(/hotel_img/hotel1.png) center/cover',
               flexShrink: 0,
               display: 'flex',
               alignItems: 'center',
