@@ -50,6 +50,7 @@ export const HOTEL_STATUS_MAP: Record<number, { label: string; color: string }> 
   0: { label: '待审核', color: 'processing' },
   1: { label: '已发布', color: 'success' },
   2: { label: '未通过', color: 'error' },
+  3: { label: '已下线', color: 'default' },
 };
 
 // 星级选项

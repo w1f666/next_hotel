@@ -218,6 +218,41 @@ export async function deleteHotel(hotelId: number) {
   return true;
 }
 
+/**
+ * 审核酒店
+ */
+export async function auditHotel(hotelId: number, status: number, rejectReason?: string) {
+  try {
+    await prisma.hotel.update({
+      where: { id: hotelId },
+      data: {
+        status,
+        rejectReason: status === 2 ? rejectReason : null
+      },
+    });
+    return { success: true, message: '操作成功' };
+  } catch (error) {
+    return { success: false, message: '操作失败' };
+  }
+}
+
+/**
+ * 切换上下线状态
+ */
+export async function toggleHotelStatus(hotelId: number, currentStatus: number) {
+  try {
+    // 状态对齐：1=已发布, 3=已下线
+    const newStatus = currentStatus === 1 ? 3 : 1;
+    await prisma.hotel.update({
+      where: { id: hotelId },
+      data: { status: newStatus },
+    });
+    return { success: true, message: `酒店已${newStatus === 1 ? '上线' : '下线'}`, data: { newStatus } };
+  } catch (error) {
+    return { success: false, message: '操作失败' };
+  }
+}
+
 // ---- 序列化工具 ----
 
 function serializeHotel(hotel: any) {
