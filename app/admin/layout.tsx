@@ -7,7 +7,6 @@ import {
     AuditOutlined,
     LogoutOutlined,
     AppstoreOutlined,
-    PlusCircleOutlined,
     ShopOutlined,
     PlusCircleOutlined
 } from '@ant-design/icons';

@@ -4,20 +4,23 @@ import React, { useState } from 'react';
 import {
   Form, Input, Select, DatePicker, InputNumber, Switch, Button,
   Card, Space, Divider, Tag, Typography, Row, Col, message, Tooltip,
+  Upload, Modal,
 } from 'antd';
 import {
   PlusOutlined, DeleteOutlined, HomeOutlined, EnvironmentOutlined,
   StarOutlined, CalendarOutlined, PictureOutlined, AppstoreOutlined,
-  DollarOutlined, InfoCircleOutlined,
+  DollarOutlined, InfoCircleOutlined, UploadOutlined, InboxOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import {
   STAR_RATING_OPTIONS, FACILITY_OPTIONS, CANCEL_POLICY_OPTIONS,
 } from '@/types';
 import type { HotelFormData, HotelRoom, HotelWithRooms } from '@/types';
+import type { UploadFile } from 'antd/es/upload/interface';
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
+const { Dragger } = Upload;
 
 interface HotelFormProps {
   initialData?: HotelWithRooms;
@@ -45,6 +48,83 @@ const SectionHeader: React.FC<{ icon: React.ReactNode; title: string; subtitle?:
 
 const HotelForm: React.FC<HotelFormProps> = ({ initialData, onSubmit, loading, mode }) => {
   const [form] = Form.useForm();
+  const [uploading, setUploading] = useState(false);
+  const [coverImageUrl, setCoverImageUrl] = useState<string>(initialData?.coverImage || '');
+  const [galleryUrls, setGalleryUrls] = useState<string[]>(initialData?.gallery || []);
+  const [previewVisible, setPreviewVisible] = useState(false);
+  const [previewImage, setPreviewImage] = useState('');
+
+  // 处理封面上传
+  const handleCoverUpload = async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    setUploading(true);
+    try {
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      const json = await res.json();
+      
+      if (json.success) {
+        const url = json.data.url;
+        setCoverImageUrl(url);
+        form.setFieldsValue({ coverImage: url });
+        message.success('封面上传成功');
+      } else {
+        message.error(json.message || '上传失败');
+      }
+    } catch (error) {
+      message.error('上传失败，请稍后重试');
+    } finally {
+      setUploading(false);
+    }
+    return false; // 阻止默认上传行为
+  };
+
+  // 处理相册上传
+  const handleGalleryUpload = async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    setUploading(true);
+    try {
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      const json = await res.json();
+      
+      if (json.success) {
+        const url = json.data.url;
+        const newGalleryUrls = [...galleryUrls, url];
+        setGalleryUrls(newGalleryUrls);
+        form.setFieldsValue({ gallery: newGalleryUrls.join('\n') });
+        message.success('图片上传成功');
+      } else {
+        message.error(json.message || '上传失败');
+      }
+    } catch (error) {
+      message.error('上传失败，请稍后重试');
+    } finally {
+      setUploading(false);
+    }
+    return false;
+  };
+
+  // 删除相册图片
+  const handleRemoveGallery = (url: string) => {
+    const newGalleryUrls = galleryUrls.filter(item => item !== url);
+    setGalleryUrls(newGalleryUrls);
+    form.setFieldsValue({ gallery: newGalleryUrls.join('\n') });
+  };
+
+  // 图片预览
+  const handlePreview = (url: string) => {
+    setPreviewImage(url);
+    setPreviewVisible(true);
+  };
 
   // 初始化房型列表
   const defaultRooms: Partial<HotelRoom>[] = initialData?.rooms?.length
@@ -195,30 +275,196 @@ const HotelForm: React.FC<HotelFormProps> = ({ initialData, onSubmit, loading, m
           subtitle="优质的图片能显著提升酒店的点击率与转化率"
         />
 
+        {/* 封面图上传 */}
         <Form.Item
           name="coverImage"
-          label="封面图 URL"
+          label="封面图"
           tooltip="将展示在列表页卡片中，建议尺寸 800×600"
         >
-          <Input placeholder="https://example.com/cover.jpg" />
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
+            <div
+              style={{
+                width: 200,
+                height: 150,
+                border: '2px dashed #d9d9d9',
+                borderRadius: 8,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                overflow: 'hidden',
+                background: coverImageUrl ? `url(${coverImageUrl}) center/cover` : '#fafafa',
+              }}
+              onClick={() => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.onchange = (e) => {
+                  const file = (e.target as HTMLInputElement).files?.[0];
+                  if (file) handleCoverUpload(file);
+                };
+                input.click();
+              }}
+            >
+              {coverImageUrl ? (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(0,0,0,0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    opacity: 0,
+                    transition: 'opacity 0.3s',
+                  }}
+                  className="hover:opacity-100"
+                >
+                  <Button size="small" style={{ color: '#fff', borderColor: '#fff' }}>
+                    更换图片
+                  </Button>
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', color: '#999' }}>
+                  <UploadOutlined style={{ fontSize: 32 }} />
+                  <div style={{ marginTop: 8 }}>点击上传封面</div>
+                </div>
+              )}
+            </div>
+            <div style={{ flex: 1 }}>
+              <Text type="secondary" style={{ display: 'block', marginBottom: 8 }}>
+                支持 JPG、PNG 格式，文件大小不超过 5MB
+              </Text>
+              <input
+                type="file"
+                accept="image/*"
+                style={{ display: 'none' }}
+                id="cover-upload"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleCoverUpload(file);
+                }}
+              />
+              <Button
+                icon={<UploadOutlined />}
+                onClick={() => document.getElementById('cover-upload')?.click()}
+                loading={uploading}
+              >
+                选择图片
+              </Button>
+              {coverImageUrl && (
+                <Button
+                  type="link"
+                  danger
+                  onClick={() => {
+                    setCoverImageUrl('');
+                    form.setFieldsValue({ coverImage: '' });
+                  }}
+                  style={{ marginLeft: 8 }}
+                >
+                  删除
+                </Button>
+              )}
+            </div>
+          </div>
         </Form.Item>
 
+        {/* 相册上传 */}
         <Form.Item
           name="gallery"
-          label={
-            <Space>
-              相册图片 URL
-              <Tooltip title="每行一个链接，将展示在详情页轮播区">
-                <InfoCircleOutlined style={{ color: '#999' }} />
-              </Tooltip>
-            </Space>
-          }
+          label="酒店相册"
+          tooltip="将展示在详情页轮播区"
         >
-          <TextArea
-            rows={4}
-            placeholder={`每行粘贴一个图片链接，例如：\nhttps://example.com/lobby.jpg\nhttps://example.com/room.jpg\nhttps://example.com/pool.jpg`}
-          />
+          <div>
+            <div style={{ marginBottom: 16 }}>
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                style={{ display: 'none' }}
+                id="gallery-upload"
+                onChange={(e) => {
+                  const files = e.target.files;
+                  if (files) {
+                    Array.from(files).forEach(file => handleGalleryUpload(file));
+                  }
+                  e.target.value = '';
+                }}
+              />
+              <Button
+                icon={<UploadOutlined />}
+                onClick={() => document.getElementById('gallery-upload')?.click()}
+                loading={uploading}
+              >
+                上传相册图片
+              </Button>
+              <Text type="secondary" style={{ marginLeft: 12 }}>
+                支持多选，每张图片不超过 5MB
+              </Text>
+            </div>
+            
+            {/* 已上传的图片列表 */}
+            {galleryUrls.length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {galleryUrls.map((url, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      position: 'relative',
+                      width: 100,
+                      height: 100,
+                      borderRadius: 8,
+                      overflow: 'hidden',
+                      border: '1px solid #d9d9d9',
+                    }}
+                  >
+                    <img
+                      src={url}
+                      alt={`gallery-${index}`}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      onClick={() => handlePreview(url)}
+                    />
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        right: 0,
+                        background: 'rgba(0,0,0,0.5)',
+                        padding: '2px 6px',
+                        cursor: 'pointer',
+                      }}
+                      onClick={() => handleRemoveGallery(url)}
+                    >
+                      <DeleteOutlined style={{ color: '#fff', fontSize: 12 }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </Form.Item>
+
+        {/* 图片预览弹窗 */}
+        <Modal
+          open={previewVisible}
+          footer={null}
+          onCancel={() => setPreviewVisible(false)}
+        >
+          <img alt="preview" style={{ width: '100%' }} src={previewImage} />
+        </Modal>
+
+        {/* 隐藏的表单字段，用于存储URL */}
+        <div style={{ display: 'none' }}>
+          <Form.Item name="coverImage" noStyle>
+            <Input />
+          </Form.Item>
+          <Form.Item name="gallery" noStyle>
+            <Input />
+          </Form.Item>
+        </div>
       </Card>
 
       {/* ============ 设施与服务 ============ */}
