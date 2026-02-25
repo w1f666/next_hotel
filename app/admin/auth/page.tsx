@@ -161,12 +161,12 @@ const RegisterForm: React.FC<AuthFormProps> = ({ loading, onFinish }) => {
 };
 
 // --- 主页面组件 ---
-const AdminAuthPage = () => {
+export default function AdminAuthPage(){
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<string>('login');
   const [loading, setLoading] = useState<boolean>(false);
 
-  // --- 登录逻辑 ---
+  // 登录逻辑
   const onLoginFinish = async (values: LoginFieldType) => {
     setLoading(true);
     try {
@@ -183,8 +183,16 @@ const AdminAuthPage = () => {
       }
 
       message.success('登录成功');
+      // 存储 token 和 role
       localStorage.setItem('token', data.token);
-      router.push('/admin/dashboard');
+      localStorage.setItem('role', data.role);
+      
+      // 根据角色跳转到不同页面
+      if (data.role === 'admin') {
+        router.push('/admin/hotels');
+      } else {
+        router.push('/admin/workspace');
+      }
     } catch (error) {
       message.error('网络错误');
     } finally {
@@ -265,5 +273,3 @@ const AdminAuthPage = () => {
     </div>
   );
 };
-
-export default AdminAuthPage;
