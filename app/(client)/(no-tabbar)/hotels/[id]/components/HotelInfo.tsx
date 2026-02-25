@@ -23,15 +23,15 @@ export default function HotelInfo({ hotel }: { hotel: HotelDetailResponse }) {
       <div className="mt-2 flex items-center gap-2">
         <div className="bg-blue-50 px-2 py-0.5 rounded flex items-center gap-1">
              <StarFill className="text-blue-500 text-xs" />
-             <span className="text-blue-600 font-bold text-sm">{hotel.rating}分</span>
+             <span className="text-blue-600 font-bold text-sm">{hotel.starRating}分</span>
         </div>
         <span className="text-xs text-gray-500">
-            {hotel.openYear}年开业
+            {hotel.createdAt && new Date(hotel.createdAt).getFullYear()} 年开业
         </span>
       </div>
 
       <div className="mt-3 flex flex-wrap gap-2">
-          {hotel.tags.map((tag, i) => (
+          {hotel.tags?.map((tag, i) => (
               <Tag key={i} color="default" style={{ '--background-color': '#f3f4f6', color: '#4b5563' }}>
                   {tag}
               </Tag>
