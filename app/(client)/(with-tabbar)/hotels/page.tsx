@@ -7,6 +7,7 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/zh-cn';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 dayjs.locale('zh-cn');
 
@@ -23,9 +24,15 @@ interface HotelItem {
 }
 
 export default function HotelSearchPage() {
+    const router = useRouter();
     const [activeTab, setActiveTab] = useState('domestic');
     const [hotels, setHotels] = useState<HotelItem[]>([]);
     const [loading, setLoading] = useState(true);
+
+    // 搜索参数
+    const [keyword, setKeyword] = useState('');
+    const [dateRange, setDateRange] = useState<[dayjs.Dayjs, dayjs.Dayjs]>([dayjs(), dayjs().add(1, 'day')]);
+    const [priceFilter, setPriceFilter] = useState<string>('all');
 
     // 获取已发布的酒店列表
     useEffect(() => {
@@ -45,6 +52,36 @@ export default function HotelSearchPage() {
         fetchHotels();
     }, []);
 
+    // 点击搜索按钮跳转到列表页
+    const handleSearch = () => {
+        // 构建查询参数
+        const params = new URLSearchParams();
+        
+        // 关键词
+        if (keyword) {
+            params.set('keyword', keyword);
+        }
+        
+        // 城市
+        params.set('city', 'shanghai'); // 默认上海
+        
+        // 日期范围
+        params.set('checkIn', dateRange[0].format('YYYY-MM-DD'));
+        params.set('checkOut', dateRange[1].format('YYYY-MM-DD'));
+        params.set('nights', String(nights));
+        
+        // 酒店类型
+        params.set('type', activeTab);
+        
+        // 价格筛选
+        if (priceFilter && priceFilter !== 'all') {
+            params.set('price', priceFilter);
+        }
+        
+        const queryString = params.toString();
+        router.push(`/hotels/list${queryString ? `?${queryString}` : ''}`);
+    };
+
     const tabsItems = [
         { key: 'domestic', label: '国内' },
         { key: 'overseas', label: '海外' },
@@ -60,10 +97,13 @@ export default function HotelSearchPage() {
         '精品酒店',
     ];
 
+    // 计算间夜数
+    const nights = dateRange[1].diff(dateRange[0], 'day');
+
     return (
         <div className="min-h-screen bg-gray-100 flex flex-col pb-10">
             {/* 顶部 Banner */}
-            <div className="relative w-full h-48 sm:h-64 bg-blue-600 overflow-hidden cursor-pointer group" onClick={() => console.log('Navigate to promo')}>
+            <div className="relative w-full h-48 sm:h-64 bg-blue-600 overflow-hidden cursor-pointer group">
                 <Image
                     src="/hotel_img/hotel1.png"
                     alt="Luxury Hotel"
@@ -101,6 +141,8 @@ export default function HotelSearchPage() {
                                 placeholder="位置 / 品牌 / 酒店"
                                 variant="borderless"
                                 className="flex-grow text-lg"
+                                value={keyword}
+                                onChange={(e) => setKeyword(e.target.value)}
                                 suffix={<AimOutlined className="text-blue-500 text-xl cursor-pointer" />}
                             />
                         </div>
@@ -112,7 +154,12 @@ export default function HotelSearchPage() {
                                 className="w-full text-lg p-0"
                                 suffixIcon={null}
                                 separator={<span className="text-gray-300 mx-2">—</span>}
-                                defaultValue={[dayjs(), dayjs().add(1, 'day')]}
+                                value={dateRange}
+                                onChange={(dates) => {
+                                    if (dates && dates[0] && dates[1]) {
+                                        setDateRange([dates[0], dates[1]]);
+                                    }
+                                }}
                                 format={(value: any) => value.format('MM月DD日')}
                                 placeholder={['入住日期', '离店日期']}
                                 renderExtraFooter={() => (
@@ -122,14 +169,18 @@ export default function HotelSearchPage() {
                                 )}
                             />
                             <div className="flex justify-between items-center mt-1">
-                                <span className="text-xs text-gray-400">今天入住 - 明天离店</span>
-                                <span className="text-xs font-semibold text-gray-600 bg-gray-100 px-2 py-0.5 rounded-full">共1晚</span>
+                                <span className="text-xs text-gray-400">
+                                    {dateRange[0].format('MM月DD日')} 入住 - {dateRange[1].format('MM月DD日')} 离店
+                                </span>
+                                <span className="text-xs font-semibold text-gray-600 bg-gray-100 px-2 py-0.5 rounded-full">共{nights}晚</span>
                             </div>
                         </div>
 
                         {/* 价格/星级 */}
                         <div className="border-b border-gray-100 pb-3">
                             <Select
+                                value={priceFilter}
+                                onChange={(value) => setPriceFilter(value)}
                                 placeholder="价格 / 星级"
                                 variant="borderless"
                                 className="w-full text-lg p-0"
@@ -165,6 +216,7 @@ export default function HotelSearchPage() {
                                 block
                                 className="h-14 text-xl font-bold rounded-xl shadow-lg shadow-blue-200 bg-gradient-to-r from-blue-500 to-blue-600 hover:opacity-90 transition-all"
                                 icon={<SearchOutlined />}
+                                onClick={handleSearch}
                             >
                                 查询
                             </Button>

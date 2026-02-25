@@ -17,6 +17,11 @@ export async function GET(req: NextRequest) {
     const pageSize = Number(searchParams.get('pageSize') || 10);
     const status = searchParams.get('status');
     const keyword = searchParams.get('keyword') || '';
+    
+    // 新增筛选参数
+    const minPrice = searchParams.get('minPrice');
+    const maxPrice = searchParams.get('maxPrice');
+    const starRating = searchParams.get('starRating');
 
     // 如果指定了 published=true，返回已发布的酒店（用于C端）
     if (published === 'true') {
@@ -30,12 +35,26 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: true, data: hotels });
     }
 
+    // 处理星级筛选
+    let starRatingFilter: number | number[] | undefined;
+    if (starRating) {
+      const stars = starRating.split(',').map(Number).filter(n => !isNaN(n));
+      if (stars.length === 1) {
+        starRatingFilter = stars[0];
+      } else if (stars.length > 1) {
+        starRatingFilter = stars;
+      }
+    }
+
     // 否则返回分页列表
     const result = await getAllHotels({
       page,
       pageSize,
       status: status !== null && status !== '' ? Number(status) : undefined,
       keyword: keyword || undefined,
+      minPrice: minPrice ? Number(minPrice) : undefined,
+      maxPrice: maxPrice ? Number(maxPrice) : undefined,
+      starRating: starRatingFilter,
     });
 
     return NextResponse.json({ success: true, ...result });
