@@ -129,6 +129,7 @@ async function main() {
         price: 936.00,
         stock: 10,
         cancelPolicy: '不可取消',
+        imageUrl: '/hotel_img/room1.jpg',
       },
       {
         hotelId: hotel1.id,
@@ -139,6 +140,7 @@ async function main() {
         price: 1150.00,
         stock: 8,
         cancelPolicy: '免费取消',
+        imageUrl: '/hotel_img/room2.jpg',
       },
       {
         hotelId: hotel1.id,
@@ -149,6 +151,7 @@ async function main() {
         price: 2888.00,
         stock: 3,
         cancelPolicy: '免费取消',
+        imageUrl: '/hotel_img/room3.jpg',
       },
     ],
   });
@@ -165,6 +168,7 @@ async function main() {
         price: 199.00,
         stock: 20,
         cancelPolicy: '不可取消',
+        imageUrl: '/hotel_img/room1.jpg',
       },
       {
         hotelId: hotel2.id,
@@ -175,6 +179,7 @@ async function main() {
         price: 268.00,
         stock: 15,
         cancelPolicy: '免费取消',
+        imageUrl: '/hotel_img/room2.jpg',
       },
     ],
   });
@@ -191,6 +196,7 @@ async function main() {
         price: 1200.00,
         stock: 10,
         cancelPolicy: '入住前3天免费取消',
+        imageUrl: '/hotel_img/room1.jpg',
       },
     ],
   });
@@ -207,6 +213,7 @@ async function main() {
         price: 2500.00,
         stock: 5,
         cancelPolicy: '免费取消',
+        imageUrl: '/hotel_img/room1.jpg',
       },
     ],
   });

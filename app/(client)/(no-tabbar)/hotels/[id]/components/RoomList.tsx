@@ -12,13 +12,13 @@ export default function RoomList({ rooms }: { rooms: Room[] }) {
           content: `准备预订: ${roomName}`,
           icon: 'success'
       });
-      // 真实开发这里会跳转到 /order/create?roomId=xxx
+      
   };
 
   return (
     <div className="space-y-3">
         <h2 className="font-bold text-base px-1 pt-2">房型预订</h2>
-        {rooms.map((room) => (
+        {rooms?.map((room) => (
             <div key={room.id} className="bg-white rounded-lg p-3 flex gap-3 shadow-sm">
                 {/* 左侧：房型图片 */}
                 <div className="w-24 h-24 shrink-0 rounded-md overflow-hidden bg-gray-100">
@@ -34,12 +34,12 @@ export default function RoomList({ rooms }: { rooms: Room[] }) {
                 {/* 右侧：房型详情 */}
                 <div className="flex-1 flex flex-col justify-between py-0.5">
                     <div>
-                        <h3 className="font-bold text-gray-900 text-sm">{room.name}</h3>
+                        <h3 className="font-bold text-gray-900 text-sm">{room.roomName}</h3>
                         <p className="text-xs text-gray-500 mt-1">
-                            {room.bed} | {room.size}
+                            {room.bedInfo} 
                         </p>
                         <div className="flex flex-wrap gap-1 mt-1.5">
-                            {room.tags.map(tag => (
+                            {room.tags?.map(tag => (
                                 <span key={tag} className="text-[10px] text-blue-600 border border-blue-100 bg-blue-50 px-1 rounded">
                                     {tag}
                                 </span>
