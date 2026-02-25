@@ -34,7 +34,7 @@ async function main() {
   });
   console.log('👤 用户创建成功: merchant01, admin01');
 
-  // 3. 创建酒店数据 (参考截图内容 )
+  // 3. 创建酒店数据 (使用本地public文件夹中的图片)
   // 酒店 A：上海陆家嘴禧玥酒店
   const hotel1 = await prisma.hotel.create({
     data: {
@@ -44,8 +44,13 @@ async function main() {
       starRating: 5,
       minPrice: 936.00,
       openingTime: new Date('2020-01-01'),
-      facilities: ['免费升房', '新中式风', '免费停车', '一线江景'],
-      coverImage: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&q=80',
+      facilities: ['免费WiFi', '免费停车', '健身房', '游泳池', '餐厅', '会议室'],
+      coverImage: '/hotel_img/hotel1.png',
+      gallery: [
+        '/hotel_img/hotel1.png',
+        '/hotel_img/hotel2.png',
+        '/hotel_img/hotel3.png',
+      ],
       status: 1, // 已发布 
     },
   });
@@ -59,8 +64,12 @@ async function main() {
       starRating: 3,
       minPrice: 199.00,
       openingTime: new Date('2021-05-10'),
-      facilities: ['免费停车', '免费洗衣服务', '机器人服务', '自助早餐'],
-      coverImage: 'https://images.unsplash.com/photo-1551882547-ff40c0d5e911?w=800&q=80',
+      facilities: ['免费WiFi', '免费停车', '机器人服务', '自助早餐'],
+      coverImage: '/hotel_img/hotel2.png',
+      gallery: [
+        '/hotel_img/hotel2.png',
+        '/hotel_img/hotel4.png',
+      ],
       status: 1, // 已发布
     },
   });
@@ -73,10 +82,39 @@ async function main() {
       address: '上海市静安区北京西路',
       starRating: 5,
       minPrice: 1200.00,
+      openingTime: new Date('2022-01-01'),
+      facilities: ['免费WiFi', '免费停车', '健身房', '游泳池', 'SPA', '行政酒廊'],
+      coverImage: '/hotel_img/hotel3.png',
+      gallery: [
+        '/hotel_img/hotel3.png',
+        '/hotel_img/hotel1.png',
+      ],
       status: 0, // 待审核 
     },
   });
-  console.log('🏨 酒店创建成功: 禧玥, 艺龙安悦, 瑞吉');
+
+  // 酒店 D：已拒绝酒店 (演示管理员功能)
+  const hotel4 = await prisma.hotel.create({
+    data: {
+      merchantId: merchant.id,
+      name: '上海外滩W酒店 (测试)',
+      address: '上海市虹口区东大名路',
+      starRating: 5,
+      minPrice: 2500.00,
+      openingTime: new Date('2019-06-01'),
+      facilities: ['免费WiFi', '免费停车', '健身房', '游泳池', '餐厅', '酒吧'],
+      coverImage: '/hotel_img/hotel4.png',
+      gallery: [
+        '/hotel_img/hotel4.png',
+        '/hotel_img/hotel2.png',
+        '/hotel_img/hotel3.png',
+      ],
+      status: 2, // 已拒绝
+      rejectReason: '提交的图片不清晰，请重新上传高质量图片',
+    },
+  });
+
+  console.log('🏨 酒店创建成功: 禧玥, 艺龙安悦, 瑞吉, 外滩W');
 
   // 4. 创建房型数据 (根据酒店 ID 逻辑关联)
   // 禧玥酒店的房型
@@ -89,6 +127,7 @@ async function main() {
         capacity: 2,
         hasBreakfast: false,
         price: 936.00,
+        stock: 10,
         cancelPolicy: '不可取消',
       },
       {
@@ -98,6 +137,17 @@ async function main() {
         capacity: 2,
         hasBreakfast: true,
         price: 1150.00,
+        stock: 8,
+        cancelPolicy: '免费取消',
+      },
+      {
+        hotelId: hotel1.id,
+        roomName: '豪华套房',
+        bedInfo: '1张2米特大床',
+        capacity: 2,
+        hasBreakfast: true,
+        price: 2888.00,
+        stock: 3,
         cancelPolicy: '免费取消',
       },
     ],
@@ -113,6 +163,7 @@ async function main() {
         capacity: 2,
         hasBreakfast: false,
         price: 199.00,
+        stock: 20,
         cancelPolicy: '不可取消',
       },
       {
@@ -122,10 +173,44 @@ async function main() {
         capacity: 2,
         hasBreakfast: true,
         price: 268.00,
+        stock: 15,
         cancelPolicy: '免费取消',
       },
     ],
   });
+
+  // 瑞吉酒店的房型
+  await prisma.hotelRoom.createMany({
+    data: [
+      {
+        hotelId: hotel3.id,
+        roomName: '经典客房',
+        bedInfo: '1张1.8米大床',
+        capacity: 2,
+        hasBreakfast: false,
+        price: 1200.00,
+        stock: 10,
+        cancelPolicy: '入住前3天免费取消',
+      },
+    ],
+  });
+
+  // 外滩W酒店的房型
+  await prisma.hotelRoom.createMany({
+    data: [
+      {
+        hotelId: hotel4.id,
+        roomName: '奇妙客房',
+        bedInfo: '1张1.8米大床',
+        capacity: 2,
+        hasBreakfast: true,
+        price: 2500.00,
+        stock: 5,
+        cancelPolicy: '免费取消',
+      },
+    ],
+  });
+
   console.log('🛏️ 房型数据填充完毕');
 
   console.log('✅ 所有种子数据已就绪！');
