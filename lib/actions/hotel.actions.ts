@@ -65,15 +65,18 @@ export async function getHotelsByMerchant(merchantId: number) {
 }
 
 /**
- * 获取所有酒店（管理员视角）
+ * 获取所有酒店（支持筛选）
  */
 export async function getAllHotels(params?: {
   page?: number;
   pageSize?: number;
   status?: number;
   keyword?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  starRating?: number | number[];
 }) {
-  const { page = 1, pageSize = 10, status, keyword } = params || {};
+  const { page = 1, pageSize = 10, status, keyword, minPrice, maxPrice, starRating } = params || {};
 
   const where: any = {};
   if (status !== undefined && status !== null) {
@@ -81,6 +84,26 @@ export async function getAllHotels(params?: {
   }
   if (keyword) {
     where.name = { contains: keyword };
+  }
+  
+  // 价格筛选
+  if (minPrice !== undefined || maxPrice !== undefined) {
+    where.minPrice = {};
+    if (minPrice !== undefined) {
+      where.minPrice.gte = minPrice;
+    }
+    if (maxPrice !== undefined) {
+      where.minPrice.lte = maxPrice;
+    }
+  }
+  
+  // 星级筛选
+  if (starRating !== undefined) {
+    if (Array.isArray(starRating) && starRating.length > 0) {
+      where.starRating = { in: starRating };
+    } else if (typeof starRating === 'number') {
+      where.starRating = starRating;
+    }
   }
 
   const [hotels, total] = await Promise.all([
