@@ -22,13 +22,13 @@ export default function WorkspacePage() {
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState('');
 
-  // 暂时使用 merchantId=1，后续接入登录态
-  const MERCHANT_ID = 1;
+  // 从登录态获取 merchantId
+  const merchantId = typeof window !== 'undefined' ? Number(localStorage.getItem('userId')) : 0;
 
   const fetchHotels = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/hotels?merchantId=${MERCHANT_ID}`);
+      const res = await fetch(`/api/hotels?merchantId=${merchantId}`);
       const json = await res.json();
       if (json.success) {
         setHotels(json.data || []);

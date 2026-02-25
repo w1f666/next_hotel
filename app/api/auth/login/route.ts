@@ -41,7 +41,8 @@ export async function POST(request: Request) {
       message: '登录成功',
       token,
       role: user.role,
-      username: user.username
+      username: user.username,
+      userId: user.id
     });
 
   } catch (error) {
