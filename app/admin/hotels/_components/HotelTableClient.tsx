@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react';
-import { Table, Button, Tag, Space, Popconfirm, message, Input } from 'antd';
+import { Table, Button, Tag, Space, Popconfirm, message, Input, Modal } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EnvironmentOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
 import type { Hotel } from '@prisma/client';
@@ -209,30 +209,26 @@ export default function HotelTableClient({ initialData, onDeleted, onUpdated }: 
       />
 
       {/* 拒绝原因弹窗 */}
-      {rejectModalVisible && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-96">
-            <h3 className="text-lg font-bold mb-4">拒绝原因</h3>
-            <Input.TextArea
-              rows={4}
-              placeholder="请输入拒绝原因"
-              value={rejectReason}
-              onChange={(e) => setRejectReason(e.target.value)}
-            />
-            <div className="flex justify-end gap-2 mt-4">
-              <Button onClick={() => setRejectModalVisible(false)}>取消</Button>
-              <Button
-                type="primary"
-                danger
-                onClick={handleReject}
-                loading={loadingId !== null}
-              >
-                确认拒绝
-              </Button>
-            </div>
-          </div>
+      <Modal
+        title="驳回酒店审核"
+        open={rejectModalVisible}
+        onOk={handleReject}
+        onCancel={() => setRejectModalVisible(false)}
+        confirmLoading={loadingId !== null}
+        okText="确认拒绝"
+        cancelText="取消"
+        okButtonProps={{ danger: true }}
+      >
+        <div className="py-4">
+          <p className="mb-2 text-gray-500 text-sm">请说明拒绝该酒店上线的详细原因，该原因将发送给商户：</p>
+          <Input.TextArea
+            rows={4}
+            placeholder="例如：酒店图片模糊、地址信息不全等..."
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+          />
         </div>
-      )}
+      </Modal>
     </div>
   );
 }
