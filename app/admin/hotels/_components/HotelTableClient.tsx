@@ -169,12 +169,6 @@ export default function HotelTableClient({ initialData, onDeleted, onUpdated }: 
           {/* 已通过/已拒绝状态显示编辑和删除 */}
           {record.status !== 0 && (
             <>
-              <Link href={`/admin/workspace/${record.id}/edit`}>
-                <Button type="link" size="small" icon={<EditOutlined />}>
-                  编辑
-                </Button>
-              </Link>
-
               <Popconfirm
                 title="确定要删除这个酒店吗？"
                 description="删除后不可恢复，请谨慎操作"
