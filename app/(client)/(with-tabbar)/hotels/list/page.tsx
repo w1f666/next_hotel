@@ -75,21 +75,21 @@ interface HotelCardProps {
 }
 
 const HotelCard = memo(function HotelCard({ hotel }: HotelCardProps) {
-  // 星级对应标签和配色
+  // 星级对应标签和配色 — 高级哑光风格
   const starConfig = hotel.starRating >= 5
-    ? { label: '奢华', gradient: 'from-amber-600 to-yellow-500', badge: 'bg-amber-500/90' }
+    ? { label: '奢华', scoreColor: 'text-amber-700', badge: 'bg-gradient-to-r from-amber-800/75 to-amber-600/75' }
     : hotel.starRating >= 4
-    ? { label: '高档', gradient: 'from-indigo-600 to-blue-500', badge: 'bg-indigo-500/90' }
+    ? { label: '高档', scoreColor: 'text-[#2d2d3a]', badge: 'bg-[#1a1a2e]/70' }
     : hotel.starRating >= 3
-    ? { label: '舒适', gradient: 'from-emerald-600 to-teal-500', badge: 'bg-emerald-500/90' }
-    : { label: '经济', gradient: 'from-gray-500 to-gray-400', badge: 'bg-gray-500/90' };
+    ? { label: '舒适', scoreColor: 'text-stone-600', badge: 'bg-stone-700/65' }
+    : { label: '经济', scoreColor: 'text-gray-500', badge: 'bg-gray-600/60' };
 
   // 模拟评分 (4.0-5.0)
   const score = (hotel.starRating * 0.8 + 1.2).toFixed(1);
 
   return (
     <Link href={`/hotels/${hotel.id}`} prefetch={false}>
-      <div className="mb-4 bg-white rounded-[20px] overflow-hidden shadow-[0_2px_16px_rgba(0,0,0,0.08)] active:shadow-[0_1px_8px_rgba(0,0,0,0.12)] active:scale-[0.985] transition-all duration-200">
+      <div className="mb-3.5 bg-white rounded-2xl overflow-hidden shadow-[0_1px_10px_rgba(0,0,0,0.05)] active:shadow-[0_1px_4px_rgba(0,0,0,0.08)] active:scale-[0.988] transition-all duration-200">
         {/* 上方大图区域 */}
         <div className="relative w-full h-[180px] overflow-hidden">
           <Image
@@ -112,11 +112,11 @@ const HotelCard = memo(function HotelCard({ hotel }: HotelCardProps) {
           </div>
 
           {/* 右上评分 */}
-          <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-md rounded-lg px-2 py-1 flex items-center gap-1 shadow-sm">
-            <span className={`text-sm font-black bg-gradient-to-r ${starConfig.gradient} bg-clip-text text-transparent`}>
+          <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-md rounded-lg px-2 py-1 flex items-center gap-1 shadow-sm">
+            <span className={`text-sm font-black ${starConfig.scoreColor}`}>
               {score}
             </span>
-            <span className="text-[9px] text-gray-500 font-medium">分</span>
+            <span className="text-[9px] text-gray-400 font-medium">分</span>
           </div>
 
           {/* 底部图上酒店名 */}
@@ -132,7 +132,7 @@ const HotelCard = memo(function HotelCard({ hotel }: HotelCardProps) {
           {/* 地址 + 星级 */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1 flex-1 min-w-0">
-              <EnvironmentOutlined className="text-blue-400 text-[11px] flex-shrink-0" />
+              <EnvironmentOutlined className="text-gray-400 text-[11px] flex-shrink-0" />
               <span className="text-[12px] text-gray-500 truncate">
                 {hotel.address}
               </span>
@@ -150,7 +150,7 @@ const HotelCard = memo(function HotelCard({ hotel }: HotelCardProps) {
               {hotel.facilities.slice(0, 4).map((facility, idx) => (
                 <span
                   key={idx}
-                  className="text-[10px] text-gray-500 bg-gray-50 border border-gray-100 py-0.5 px-2 rounded-md whitespace-nowrap"
+                  className="text-[10px] text-gray-500 bg-gray-50/80 py-0.5 px-2 rounded whitespace-nowrap"
                 >
                   {facility}
                 </span>
@@ -458,7 +458,7 @@ export default function HotelListPage() {
             setTempStars([]);
             setTempFacilities([]);
           }}
-          className="text-sm text-blue-500 active:text-blue-700"
+          className="text-sm text-gray-400 active:text-gray-600"
         >
           重置
         </button>
@@ -476,7 +476,7 @@ export default function HotelListPage() {
                   key={range.value}
                   className={`px-3 py-1.5 rounded-full text-xs font-medium cursor-pointer transition-all ${
                     isActive
-                      ? 'bg-blue-500 text-white shadow-sm'
+                      ? 'bg-[#1a1a2e] text-white'
                       : 'bg-gray-100 text-gray-600 active:bg-gray-200'
                   }`}
                   onClick={() => {
@@ -508,7 +508,7 @@ export default function HotelListPage() {
                   key={star.value}
                   className={`px-3 py-1.5 rounded-full text-xs font-medium cursor-pointer transition-all ${
                     isActive
-                      ? 'bg-orange-500 text-white shadow-sm'
+                      ? 'bg-amber-600 text-white'
                       : 'bg-gray-100 text-gray-600 active:bg-gray-200'
                   }`}
                   onClick={() => {
@@ -537,7 +537,7 @@ export default function HotelListPage() {
                   key={facility}
                   className={`px-3 py-1.5 rounded-full text-xs font-medium cursor-pointer transition-all ${
                     isActive
-                      ? 'bg-teal-500 text-white shadow-sm'
+                      ? 'bg-stone-700 text-white'
                       : 'bg-gray-100 text-gray-600 active:bg-gray-200'
                   }`}
                   onClick={() => {
@@ -568,7 +568,7 @@ export default function HotelListPage() {
         <Button 
           type="primary" 
           size="large"
-          className="flex-1 rounded-xl h-11 bg-blue-500 hover:bg-blue-600 font-medium"
+          className="flex-1 rounded-xl h-11 bg-[#1a1a2e] hover:bg-[#2a2a3e] border-none font-medium"
           onClick={() => {
             // 将临时状态写回主状态，触发 useEffect 重新请求
             setPriceRange(tempPriceRange);
@@ -584,9 +584,9 @@ export default function HotelListPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#f0f2f5] flex flex-col" ref={listRef}>
+      <div className="min-h-screen bg-[#f4f4f2] flex flex-col" ref={listRef}>
       {/* ====== 顶部搜索栏 —— 深色高级感 ====== */}
-      <div className="bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] sticky top-0 z-40 pb-4 shadow-[0_4px_20px_rgba(0,0,0,0.15)]">
+      <div className="bg-gradient-to-br from-[#1a1a2e] via-[#1e1e32] to-[#252538] sticky top-0 z-40 pb-4 shadow-[0_4px_20px_rgba(0,0,0,0.15)]">
         {/* 城市 + 日期 */}
         <div className="px-4 pt-3.5 pb-1">
           <div className="flex items-center gap-2.5">
@@ -595,7 +595,7 @@ export default function HotelListPage() {
               className="flex items-center gap-1.5 cursor-pointer py-1.5 px-3 rounded-xl bg-white/10 border border-white/10 active:bg-white/20 transition-all"
               onClick={() => {}}
             >
-              <EnvironmentOutlined className="text-blue-300 text-xs" />
+              <EnvironmentOutlined className="text-white/50 text-xs" />
               <span className="font-semibold text-sm text-white tracking-wide">
                 {CITIES.find(c => c.value === city)?.label || '上海'}
               </span>
@@ -607,11 +607,11 @@ export default function HotelListPage() {
               className="flex-1 flex items-center gap-2 cursor-pointer py-1.5 px-3 rounded-xl bg-white/10 border border-white/10 active:bg-white/20 transition-all"
               onClick={() => {}}
             >
-              <CalendarOutlined className="text-blue-300 text-xs" />
+              <CalendarOutlined className="text-white/50 text-xs" />
               <span className="text-[13px] font-medium text-white/90">
                 {dateRange[0].format('M月D日')} — {dateRange[1].format('M月D日')}
               </span>
-              <span className="text-[10px] text-blue-300 font-bold bg-blue-500/30 px-1.5 py-0.5 rounded-md ml-auto">
+              <span className="text-[10px] text-white/80 font-bold bg-white/15 px-1.5 py-0.5 rounded-md ml-auto">
                 {nights}晚
               </span>
             </div>
@@ -639,7 +639,7 @@ export default function HotelListPage() {
             )}
           </div>
           <div
-            className="relative w-11 h-11 flex items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl cursor-pointer active:from-blue-600 active:to-indigo-700 transition-all shadow-[0_2px_10px_rgba(59,130,246,0.4)]"
+            className="relative w-11 h-11 flex items-center justify-center bg-white/15 border border-white/20 rounded-2xl cursor-pointer active:bg-white/25 transition-all backdrop-blur-sm"
             onClick={openFilterModal}
           >
             <FilterOutlined className="text-white text-[15px]" />
@@ -666,7 +666,7 @@ export default function HotelListPage() {
         ].map((tag) => (
           <div 
             key={tag.label}
-            className={`cursor-pointer whitespace-nowrap px-4 py-1.5 rounded-full text-[12px] font-medium transition-all border ${
+            className={`flex-shrink-0 cursor-pointer whitespace-nowrap px-4 py-1.5 rounded-full text-[12px] font-medium transition-all border ${
               tag.active 
                 ? 'bg-[#1a1a2e] text-white border-[#1a1a2e] shadow-sm' 
                 : 'bg-white text-gray-600 border-gray-200 active:bg-gray-100'
@@ -679,7 +679,7 @@ export default function HotelListPage() {
         {selectedStars.map(star => (
           <div 
             key={star} 
-            className="cursor-pointer whitespace-nowrap px-3 py-1.5 rounded-full text-[12px] font-medium bg-amber-50 text-amber-700 border border-amber-200 flex items-center gap-1 active:bg-amber-100"
+            className="flex-shrink-0 cursor-pointer whitespace-nowrap px-3 py-1.5 rounded-full text-[12px] font-medium bg-amber-50 text-amber-700 border border-amber-200 flex items-center gap-1 active:bg-amber-100"
             onClick={() => setSelectedStars(prev => prev.filter(s => s !== star))}
           >
             {star}星 <CloseOutlined className="text-[7px] opacity-60" />
@@ -688,14 +688,14 @@ export default function HotelListPage() {
         {selectedFacilities.slice(0, 2).map(f => (
           <div 
             key={f} 
-            className="cursor-pointer whitespace-nowrap px-3 py-1.5 rounded-full text-[12px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1 active:bg-emerald-100"
+            className="flex-shrink-0 cursor-pointer whitespace-nowrap px-3 py-1.5 rounded-full text-[12px] font-medium bg-stone-50 text-stone-600 border border-stone-200 flex items-center gap-1 active:bg-stone-100"
             onClick={() => setSelectedFacilities(prev => prev.filter(x => x !== f))}
           >
             {f} <CloseOutlined className="text-[7px] opacity-60" />
           </div>
         ))}
         {selectedFacilities.length > 2 && (
-          <div className="whitespace-nowrap px-3 py-1.5 rounded-full text-[12px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+          <div className="flex-shrink-0 whitespace-nowrap px-3 py-1.5 rounded-full text-[12px] font-medium bg-stone-50 text-stone-600 border border-stone-200">
             +{selectedFacilities.length - 2}
           </div>
         )}
