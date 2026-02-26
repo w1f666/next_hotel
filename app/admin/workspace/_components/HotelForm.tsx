@@ -54,6 +54,54 @@ const HotelForm: React.FC<HotelFormProps> = ({ initialData, onSubmit, loading, m
   const [galleryUrls, setGalleryUrls] = useState<string[]>(initialData?.gallery || []);
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewImage, setPreviewImage] = useState('');
+  
+  // 房型图片状态 - 使用数组存储每个房型的图片
+  const [roomImageUrls, setRoomImageUrls] = useState<Record<number, string>>(() => {
+    const initial: Record<number, string> = {};
+    initialData?.rooms?.forEach((_, index) => {
+      initial[index] = initialData.rooms[index]?.imageUrl || '';
+    });
+    return initial;
+  });
+
+  // 处理房型图片上传
+  const handleRoomImageUpload = async (file: File, roomIndex: number) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    setUploading(true);
+    try {
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      const json = await res.json();
+      
+      if (json.success) {
+        const url = json.data.url;
+        setRoomImageUrls(prev => ({
+          ...prev,
+          [roomIndex]: url
+        }));
+        message.success('房型图片上传成功');
+      } else {
+        message.error(json.message || '上传失败');
+      }
+    } catch (error) {
+      message.error('上传失败，请稍后重试');
+    } finally {
+      setUploading(false);
+    }
+    return false;
+  };
+
+  // 删除房型图片
+  const handleRemoveRoomImage = (roomIndex: number) => {
+    setRoomImageUrls(prev => ({
+      ...prev,
+      [roomIndex]: ''
+    }));
+  };
 
   // 处理封面上传
   const handleCoverUpload = async (file: File) => {
@@ -145,6 +193,7 @@ const HotelForm: React.FC<HotelFormProps> = ({ initialData, onSubmit, loading, m
         price: r.price,
         stock: r.stock,
         cancelPolicy: r.cancelPolicy,
+        imageUrl: r.imageUrl,
       }))
     : [{ roomName: '', bedInfo: '', capacity: 2, hasBreakfast: false, price: 0, stock: 10, cancelPolicy: '免费取消' }];
 
@@ -181,7 +230,7 @@ const HotelForm: React.FC<HotelFormProps> = ({ initialData, onSubmit, loading, m
         facilities: values.facilities || [],
         coverImage: values.coverImage || '',
         gallery: galleryArr,
-        rooms: (values.rooms || []).map((room: any) => ({
+        rooms: (values.rooms || []).map((room: any, index: number) => ({
           roomName: room.roomName,
           bedInfo: room.bedInfo || '',
           capacity: room.capacity || 2,
@@ -189,6 +238,7 @@ const HotelForm: React.FC<HotelFormProps> = ({ initialData, onSubmit, loading, m
           price: Number(room.price) || 0,
           stock: room.stock || 10,
           cancelPolicy: room.cancelPolicy || '免费取消',
+          imageUrl: roomImageUrls[index] || '',
         })),
       };
 
@@ -630,6 +680,76 @@ const HotelForm: React.FC<HotelFormProps> = ({ initialData, onSubmit, loading, m
                         valuePropName="checked"
                       >
                         <Switch checkedChildren="含早" unCheckedChildren="不含" />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+
+                  {/* 房型图片上传 */}
+                  <Row gutter={16}>
+                    <Col xs={24}>
+                      <Form.Item label="房型图片">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                          <div
+                            style={{
+                              width: 100,
+                              height: 100,
+                              border: '2px dashed #d9d9d9',
+                              borderRadius: 8,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              cursor: 'pointer',
+                              overflow: 'hidden',
+                              background: roomImageUrls[index] ? `url(${roomImageUrls[index]}) center/cover` : '#fafafa',
+                            }}
+                            onClick={() => {
+                              const input = document.createElement('input');
+                              input.type = 'file';
+                              input.accept = 'image/*';
+                              input.onchange = (e) => {
+                                const file = (e.target as HTMLInputElement).files?.[0];
+                                if (file) handleRoomImageUpload(file, index);
+                              };
+                              input.click();
+                            }}
+                          >
+                            {roomImageUrls[index] ? (
+                              <div
+                                style={{
+                                  position: 'absolute',
+                                  top: 0,
+                                  left: 0,
+                                  right: 0,
+                                  bottom: 0,
+                                  background: 'rgba(0,0,0,0.3)',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  opacity: 0,
+                                  transition: 'opacity 0.3s',
+                                }}
+                              >
+                                <Button size="small" style={{ color: '#fff', borderColor: '#fff' }}>
+                                  更换
+                                </Button>
+                              </div>
+                            ) : (
+                              <div style={{ textAlign: 'center', color: '#999' }}>
+                                <UploadOutlined style={{ fontSize: 24 }} />
+                                <div style={{ fontSize: 10 }}>上传图片</div>
+                              </div>
+                            )}
+                          </div>
+                          {roomImageUrls[index] && (
+                            <Button
+                              type="link"
+                              danger
+                              onClick={() => handleRemoveRoomImage(index)}
+                            >
+                              删除图片
+                            </Button>
+                          )}
+                        </div>
                       </Form.Item>
                     </Col>
                   </Row>
