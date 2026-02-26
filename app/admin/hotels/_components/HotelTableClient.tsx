@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react';
-import { Table, Button, Tag, Space, Popconfirm, message, Input, Modal } from 'antd';
+import { Table, Button, Tag, Space, Popconfirm, Input, Modal, App } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EnvironmentOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
 import type { Hotel } from '@prisma/client';
@@ -18,6 +18,7 @@ interface Props {
 }
 
 export default function HotelTableClient({ initialData, onDeleted, onUpdated }: Props) {
+  const { message } = App.useApp();
   const [loadingId, setLoadingId] = useState<number | null>(null);
   const [rejectModalVisible, setRejectModalVisible] = useState(false);
   const [currentRejectId, setCurrentRejectId] = useState<number | null>(null);

@@ -53,18 +53,20 @@ export async function getHotelsByMerchant(merchantId: number) {
 }
 
 /**
- * 获取所有酒店（支持筛选）
+ * 获取所有酒店（支持筛选）- 支持游标分页和传统分页）
  */
 export async function getAllHotels(params?: {
   page?: number;
   pageSize?: number;
+  cursor?: number | null;
   status?: number;
   keyword?: string;
   minPrice?: number;
   maxPrice?: number;
   starRating?: number | number[];
+  facilities?: string[];
 }) {
-  const { page = 1, pageSize = 10, status, keyword, minPrice, maxPrice, starRating } = params || {};
+  const { page = 1, pageSize = 10, cursor, status, keyword, minPrice, maxPrice, starRating, facilities } = params || {};
 
   const where: any = {};
   if (status !== undefined && status !== null) {
@@ -94,7 +96,45 @@ export async function getAllHotels(params?: {
     }
   }
 
-  const [hotels, total] = await Promise.all([
+  // 设施筛选 — facilities 是 JSON 数组，使用 array_contains 逐个匹配
+  if (facilities && facilities.length > 0) {
+    where.AND = facilities.map((f: string) => ({
+      facilities: { array_contains: f },
+    }));
+  }
+
+  let hotels;
+  let total: number;
+  
+  // 使用游标分页（优先）- 通过检查 cursor 参数来判断是否使用游标分页
+  // cursor 为 undefined 表示使用传统分页，cursor 为 null 或 number 表示使用游标分页
+  if (cursor !== undefined) {
+    // 游标分页：使用 last item 的 id 作为下一个起点
+    const cursorWhere = cursor !== null 
+      ? { ...where, id: { lt: cursor } }  // 获取 id 小于游标的记录
+      : where;  // 首次加载，不加 id 限制
+    
+    [hotels, total] = await Promise.all([
+      prisma.hotel.findMany({
+        where: cursorWhere,
+        orderBy: { id: 'desc' },
+        take: pageSize,
+      }),
+      prisma.hotel.count({ where }),
+    ]);
+    
+    const nextCursor = hotels.length === pageSize ? hotels[hotels.length - 1].id : null;
+    const hasMore = hotels.length === pageSize;
+    
+    return {
+      data: hotels.map(serializeHotel),
+      nextCursor,
+      hasMore,
+    };
+  }
+  
+  // 使用传统 offset 分页
+  const [offsetHotels, offsetTotal] = await Promise.all([
     prisma.hotel.findMany({
       where,
       orderBy: { updatedAt: 'desc' },
@@ -105,12 +145,12 @@ export async function getAllHotels(params?: {
   ]);
 
   return {
-    data: hotels.map(serializeHotel),
+    data: offsetHotels.map(serializeHotel),
     pagination: {
       page,
       pageSize,
-      total,
-      totalPages: Math.ceil(total / pageSize),
+      total: offsetTotal,
+      totalPages: Math.ceil(offsetTotal / pageSize),
     },
   };
 }
