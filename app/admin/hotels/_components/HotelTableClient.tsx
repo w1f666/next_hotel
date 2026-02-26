@@ -1,21 +1,20 @@
 'use client'
 
 import React, { useState } from 'react';
-import { Table, Button, Tag, Space, Popconfirm, message, Input } from 'antd';
-// 引入 ColumnsType 帮助提供准确的列类型推导
-import type { ColumnsType } from 'antd/es/table'; 
+import { Table, Button, Tag, Space, Popconfirm, message, Input, Modal } from 'antd';
+import type { ColumnsType } from 'antd/es/table';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EnvironmentOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
 import type { Hotel } from '@prisma/client';
 import Link from 'next/link';
 import { deleteHotel, approveHotel, rejectHotel } from '@/lib/actions/hotel.actions';
 
-// 1. 抽取出一个独立的类型，记得加上表格里用到的 'status' 字段
+// 1. 抽取独立的类型
 type HotelTableRow = Pick<Hotel, 'id' | 'name' | 'address' | 'starRating' | 'minPrice' | 'coverImage' | 'status' | 'rejectReason' | 'createdAt' | 'updatedAt'>;
 
 interface Props {
-    initialData: HotelTableRow[];
-    onDeleted?: () => void;  // 删除后回调，用于刷新数据
-    onUpdated?: () => void;  // 审核操作后刷新数据
+  initialData: HotelTableRow[];
+  onDeleted?: () => void;  // 删除后回调，用于刷新数据
+  onUpdated?: () => void;  // 审核操作后刷新数据
 }
 
 export default function HotelTableClient({ initialData, onDeleted, onUpdated }: Props) {
@@ -74,7 +73,7 @@ export default function HotelTableClient({ initialData, onDeleted, onUpdated }: 
       message.warning('请输入拒绝原因');
       return;
     }
-    
+
     setLoadingId(currentRejectId);
     try {
       const result = await rejectHotel(currentRejectId, rejectReason);
@@ -144,9 +143,9 @@ export default function HotelTableClient({ initialData, onDeleted, onUpdated }: 
           {/* 待审核状态显示审核按钮 */}
           {record.status === 0 && (
             <>
-              <Button 
-                type="primary" 
-                size="small" 
+              <Button
+                type="primary"
+                size="small"
                 icon={<CheckOutlined />}
                 onClick={() => handleApprove(record.id)}
                 loading={loadingId === record.id}
@@ -154,8 +153,8 @@ export default function HotelTableClient({ initialData, onDeleted, onUpdated }: 
               >
                 通过
               </Button>
-              <Button 
-                size="small" 
+              <Button
+                size="small"
                 danger
                 icon={<CloseOutlined />}
                 onClick={() => openRejectModal(record.id)}
@@ -165,7 +164,7 @@ export default function HotelTableClient({ initialData, onDeleted, onUpdated }: 
               </Button>
             </>
           )}
-          
+
           {/* 已通过/已拒绝状态显示编辑和删除 */}
           {record.status !== 0 && (
             <>
@@ -177,10 +176,10 @@ export default function HotelTableClient({ initialData, onDeleted, onUpdated }: 
                 cancelText="取消"
                 okButtonProps={{ danger: true }}
               >
-                <Button 
-                  type="link" 
-                  danger 
-                  size="small" 
+                <Button
+                  type="link"
+                  danger
+                  size="small"
                   icon={<DeleteOutlined />}
                   loading={loadingId === record.id}
                 >
@@ -196,38 +195,34 @@ export default function HotelTableClient({ initialData, onDeleted, onUpdated }: 
 
   return (
     <div className="bg-white p-4 rounded-lg shadow-sm">
-      <Table 
-        columns={columns} 
-        dataSource={initialData} 
-        rowKey="id" 
+      <Table
+        columns={columns}
+        dataSource={initialData}
+        rowKey="id"
         pagination={{ pageSize: 10 }}
       />
 
       {/* 拒绝原因弹窗 */}
-      {rejectModalVisible && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-96">
-            <h3 className="text-lg font-bold mb-4">拒绝原因</h3>
-            <Input.TextArea
-              rows={4}
-              placeholder="请输入拒绝原因"
-              value={rejectReason}
-              onChange={(e) => setRejectReason(e.target.value)}
-            />
-            <div className="flex justify-end gap-2 mt-4">
-              <Button onClick={() => setRejectModalVisible(false)}>取消</Button>
-              <Button 
-                type="primary" 
-                danger 
-                onClick={handleReject}
-                loading={loadingId !== null}
-              >
-                确认拒绝
-              </Button>
-            </div>
-          </div>
+      <Modal
+        title="驳回酒店审核"
+        open={rejectModalVisible}
+        onOk={handleReject}
+        onCancel={() => setRejectModalVisible(false)}
+        confirmLoading={loadingId !== null}
+        okText="确认拒绝"
+        cancelText="取消"
+        okButtonProps={{ danger: true }}
+      >
+        <div className="py-4">
+          <p className="mb-2 text-gray-500 text-sm">请说明拒绝该酒店上线的详细原因，该原因将发送给商户：</p>
+          <Input.TextArea
+            rows={4}
+            placeholder="例如：酒店图片模糊、地址信息不全等..."
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+          />
         </div>
-      )}
+      </Modal>
     </div>
   );
 }

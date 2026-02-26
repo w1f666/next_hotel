@@ -56,28 +56,28 @@ export default function HotelSearchPage() {
     const handleSearch = () => {
         // 构建查询参数
         const params = new URLSearchParams();
-        
+
         // 关键词
         if (keyword) {
             params.set('keyword', keyword);
         }
-        
+
         // 城市
         params.set('city', 'shanghai'); // 默认上海
-        
+
         // 日期范围
         params.set('checkIn', dateRange[0].format('YYYY-MM-DD'));
         params.set('checkOut', dateRange[1].format('YYYY-MM-DD'));
         params.set('nights', String(nights));
-        
+
         // 酒店类型
         params.set('type', activeTab);
-        
+
         // 价格筛选
         if (priceFilter && priceFilter !== 'all') {
             params.set('price', priceFilter);
         }
-        
+
         const queryString = params.toString();
         router.push(`/hotels/list${queryString ? `?${queryString}` : ''}`);
     };
@@ -101,26 +101,26 @@ export default function HotelSearchPage() {
     const nights = dateRange[1].diff(dateRange[0], 'day');
 
     return (
-        <div className="min-h-screen bg-gray-100 flex flex-col pb-10">
-            {/* 顶部 Banner */}
-            <div className="relative w-full h-48 sm:h-64 bg-blue-600 overflow-hidden cursor-pointer group">
+        <div className="min-h-screen bg-gray-50 flex flex-col pb-10">
+            {/* 顶部 Banner*/}
+            <div className="relative w-full h-48 sm:h-60 bg-blue-600 overflow-hidden">
                 <Image
                     src="/hotel_img/hotel1.png"
                     alt="Luxury Hotel"
                     fill
-                    className="object-cover opacity-60 group-hover:scale-105 transition-transform duration-700"
+                    className="object-cover opacity-60"
                 />
-                <div className="absolute inset-0 flex items-center justify-center text-white text-3xl font-bold bg-black/20">
-                    <div className="text-center drop-shadow-lg">
-                        <h2 className="text-2xl sm:text-4xl tracking-widest">酒店 7 折起</h2>
+                <div className="absolute inset-0 flex items-center justify-center text-white bg-black/20">
+                    <div className="text-center">
+                        <h2 className="text-2xl sm:text-4xl font-bold tracking-widest">酒店 7 折起</h2>
                         <p className="text-sm sm:text-lg opacity-90 mt-2 font-light">发现您的完美避世之所</p>
                     </div>
                 </div>
             </div>
 
-            {/* 核心查询区域 */}
-            <div className="relative px-4 -mt-10 sm:-mt-16 max-w-2xl mx-auto w-full">
-                <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-6 overflow-hidden">
+            {/* 核心查询区域 - 增加毛玻璃效果*/}
+            <div className="relative px-4 -mt-10 sm:-mt-12 max-w-2xl mx-auto w-full z-20">
+                <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl p-4 sm:p-6 border border-white/40 overflow-hidden">
                     {/* 类型切换 */}
                     <Tabs
                         activeKey={activeTab}
