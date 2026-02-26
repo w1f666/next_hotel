@@ -7,7 +7,8 @@ import { getAllHotels, getHotelsByMerchant, getPublishedHotels, createHotel } fr
  * 查询参数: 
  *   - merchantId: 商户ID（返回该商户的酒店）
  *   - published: true/false（返回已发布的酒店，用于C端）
- *   - page, pageSize, status, keyword: 分页和筛选参数
+ *   - cursor: 游标分页（用于无限滚动）
+ *   - page, pageSize, status, keyword: 传统分页和筛选参数
  */
 export async function GET(req: NextRequest) {
   try {
@@ -16,6 +17,15 @@ export async function GET(req: NextRequest) {
     const published = searchParams.get('published');
     const page = Number(searchParams.get('page') || 1);
     const pageSize = Number(searchParams.get('pageSize') || 10);
+    
+    // 处理游标参数：如果存在 cursor 参数（即使是空字符串），则使用游标分页
+    const cursorParam = searchParams.get('cursor');
+    let cursor: number | null | undefined = undefined;
+    if (cursorParam !== null) {
+      // cursor 参数存在，启用游标分页
+      cursor = cursorParam === '' ? null : Number(cursorParam);
+    }
+    
     const status = searchParams.get('status');
     const keyword = searchParams.get('keyword') || '';
     
@@ -23,6 +33,7 @@ export async function GET(req: NextRequest) {
     const minPrice = searchParams.get('minPrice');
     const maxPrice = searchParams.get('maxPrice');
     const starRating = searchParams.get('starRating');
+    const facilitiesParam = searchParams.get('facilities');
 
     // 如果指定了 published=true，返回已发布的酒店（用于C端）
     if (published === 'true') {
@@ -47,15 +58,18 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // 否则返回分页列表
+    // 否则返回分页列表（支持游标分页和传统分页）
+    // cursor: undefined → 传统分页, null → 游标首页, number → 游标翻页
     const result = await getAllHotels({
       page,
       pageSize,
+      cursor,
       status: status !== null && status !== '' ? Number(status) : undefined,
       keyword: keyword || undefined,
       minPrice: minPrice ? Number(minPrice) : undefined,
       maxPrice: maxPrice ? Number(maxPrice) : undefined,
       starRating: starRatingFilter,
+      facilities: facilitiesParam ? facilitiesParam.split(',').filter(Boolean) : undefined,
     });
 
     return NextResponse.json({ success: true, ...result });
