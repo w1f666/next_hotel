@@ -10,6 +10,7 @@ export interface HotelRoom {
   price: number;
   stock: number;
   cancelPolicy: string;
+  imageUrl?: string;
 }
 
 export interface Hotel {

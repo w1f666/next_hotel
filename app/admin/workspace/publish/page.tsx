@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Typography, Breadcrumb, message, Button, Space, Spin } from 'antd';
+import { Typography, Breadcrumb, Button, Space, Spin, App } from 'antd';
 import { ArrowLeftOutlined, HomeOutlined, EditOutlined } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
 import HotelForm from '../_components/HotelForm';
@@ -11,6 +11,7 @@ const { Title, Paragraph } = Typography;
 
 export default function PublishHotelPage() {
   const router = useRouter();
+  const { message } = App.useApp();
   const [loading, setLoading] = useState(false);
   const [merchantId, setMerchantId] = useState<number | null>(null);
   const [isChecking, setIsChecking] = useState(true);
@@ -35,7 +36,7 @@ export default function PublishHotelPage() {
     
     setMerchantId(id);
     setIsChecking(false);
-  }, [router]);
+  }, [router, message]);
 
   const handleSubmit = async (formData: HotelFormData) => {
     if (!merchantId) {

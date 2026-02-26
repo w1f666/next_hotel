@@ -172,6 +172,7 @@ export async function createHotel(merchantId: number, data: HotelFormData) {
         price: room.price,
         stock: room.stock,
         cancelPolicy: room.cancelPolicy,
+        imageUrl: room.imageUrl || null,
       })),
     });
   }
@@ -216,6 +217,7 @@ export async function updateHotel(hotelId: number, data: HotelFormData) {
         price: room.price,
         stock: room.stock,
         cancelPolicy: room.cancelPolicy,
+        imageUrl: room.imageUrl || null,
       })),
     });
   }
@@ -283,6 +285,7 @@ function serializeRoom(room: any) {
   return {
     ...room,
     price: Number(room.price),
+    imageUrl: room.imageUrl || null,
     createdAt: room.createdAt.toISOString(),
     updatedAt: room.updatedAt.toISOString(),
   };
