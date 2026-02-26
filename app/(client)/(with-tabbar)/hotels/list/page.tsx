@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   Input, DatePicker, Select, Button, Tag, Space, Typography, 
-  Card, Spin, Empty, Checkbox, Modal 
+  Card, Spin, Empty, Checkbox, Modal, Divider 
 } from 'antd';
 import { 
   EnvironmentOutlined, SearchOutlined, AimOutlined, 
@@ -243,38 +243,40 @@ export default function HotelListPage() {
     <Modal
       open={filterVisible}
       title={
-        <div className="flex items-center justify-between">
-          <span>筛选</span>
-          <Button type="link" size="small" onClick={clearFilters}>
+        <div className="flex items-center justify-between text-lg font-semibold text-gray-800">
+          <span>高级筛选</span>
+          <Button type="link" size="small" onClick={clearFilters} className="text-gray-500 hover:text-blue-500">
             清除全部
           </Button>
         </div>
       }
       footer={
-        <div className="flex gap-2">
-          <Button block onClick={() => setFilterVisible(false)}>
+        <div className="flex gap-3 pt-2">
+          <Button size="large" className="flex-1 rounded-full" onClick={() => setFilterVisible(false)}>
             取消
           </Button>
           <Button 
             type="primary" 
-            block 
+            size="large"
+            className="flex-1 rounded-full bg-blue-600 hover:bg-blue-500"
             onClick={() => {
               setFilterVisible(false);
               setPage(1);
               fetchHotels(1, true);
             }}
           >
-            确定
+            查看结果
           </Button>
         </div>
       }
       onCancel={() => setFilterVisible(false)}
       className="filter-modal"
+      centered
     >
-      <div className="space-y-6">
+      <div className="space-y-6 py-4">
         {/* 价格筛选 */}
         <div>
-          <div className="font-medium mb-3">价格</div>
+          <div className="font-semibold text-gray-800 mb-3">价格区间</div>
           <Select
             value={getPriceSelectValue()}
             onChange={(val: string) => {
@@ -288,20 +290,21 @@ export default function HotelListPage() {
               }
             }}
             options={PRICE_RANGES}
+            size="large"
             className="w-full"
           />
         </div>
 
         {/* 星级筛选 */}
         <div>
-          <div className="font-medium mb-3">星级</div>
+          <div className="font-semibold text-gray-800 mb-3">酒店星级</div>
           <CheckboxGroup
             value={selectedStars}
             onChange={(vals: (string | number | readonly string[])[]) => setSelectedStars(vals as number[])}
-            className="flex flex-wrap gap-2"
+            className="flex flex-col gap-3"
           >
             {STAR_OPTIONS.map((star) => (
-              <Checkbox key={star.value} value={star.value}>
+              <Checkbox key={star.value} value={star.value} className="text-gray-600 text-sm">
                 {star.label}
               </Checkbox>
             ))}
@@ -310,14 +313,14 @@ export default function HotelListPage() {
 
         {/* 设施筛选 */}
         <div>
-          <div className="font-medium mb-3">设施</div>
+          <div className="font-semibold text-gray-800 mb-3">配套设施</div>
           <CheckboxGroup
             value={selectedFacilities}
             onChange={(vals: (string | number | readonly string[])[]) => setSelectedFacilities(vals as string[])}
-            className="flex flex-wrap gap-2"
+            className="grid grid-cols-3 gap-y-3 gap-x-2"
           >
             {FACILITY_OPTIONS.map((facility) => (
-              <Checkbox key={facility} value={facility}>
+              <Checkbox key={facility} value={facility} className="text-gray-600 text-sm ml-0">
                 {facility}
               </Checkbox>
             ))}
@@ -331,12 +334,12 @@ export default function HotelListPage() {
   const renderHotelCard = (hotel: HotelItem) => (
     <Link href={`/hotels/${hotel.id}`} key={hotel.id}>
       <Card
-        className="mb-3 rounded-lg overflow-hidden hover:shadow-md transition-shadow"
-        bodyStyle={{ padding: '12px' }}
+        className="mb-4 border-none shadow-sm hover:shadow-md transition-shadow rounded-2xl overflow-hidden bg-white"
+        styles={{ body: { padding: '14px' } }}
       >
         <div className="flex gap-3">
           {/* 酒店图片 */}
-          <div className="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0 relative">
+          <div className="w-28 h-32 rounded-xl overflow-hidden flex-shrink-0 relative">
             <Image
               src={hotel.coverImage || '/hotel_img/hotel1.png'}
               alt={hotel.name}
@@ -346,54 +349,61 @@ export default function HotelListPage() {
           </div>
           
           {/* 酒店信息 */}
-          <div className="flex-1 min-w-0">
-            <div className="flex justify-between items-start">
-              <h3 className="font-semibold text-base truncate flex-1">
-                {hotel.name}
-              </h3>
-              <div className="text-right flex-shrink-0 ml-2">
-                <span className="text-red-500 font-bold text-lg">
-                  ¥{hotel.minPrice}
+          <div className="flex-1 min-w-0 flex flex-col justify-between">
+            <div>
+              <div className="flex justify-between items-start">
+                <h3 className="font-bold text-base text-gray-800 leading-snug line-clamp-2">
+                  {hotel.name}
+                </h3>
+              </div>
+              
+              {/* 评分和星级 */}
+              <div className="flex items-center gap-1 mt-1.5">
+                <div className="flex items-center">
+                  {Array.from({ length: hotel.starRating }, (_, i) => (
+                    <StarFilled key={i} className="text-yellow-400 text-[10px]" />
+                  ))}
+                </div>
+                <span className="text-xs text-gray-500 ml-1">
+                  {hotel.starRating}星级
                 </span>
-                <span className="text-xs text-gray-400">起</span>
               </div>
-            </div>
-            
-            {/* 评分和星级 */}
-            <div className="flex items-center gap-2 mt-1">
-              <div className="flex items-center">
-                {Array.from({ length: hotel.starRating }, (_, i) => (
-                  <StarFilled key={i} className="text-yellow-400 text-xs" />
-                ))}
+              
+              {/* 地址 */}
+              <div className="flex items-center gap-1 mt-1.5">
+                <EnvironmentOutlined className="text-gray-400 text-xs flex-shrink-0" />
+                <span className="text-xs text-gray-500 truncate">
+                  {hotel.address}
+                </span>
               </div>
-              <Text type="secondary" className="text-xs">
-                {hotel.starRating}星级
-              </Text>
+              
+              {/* 设施标签 */}
+              {hotel.facilities && hotel.facilities.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {hotel.facilities.slice(0, 3).map((facility, idx) => (
+                    <span 
+                      key={idx} 
+                      className="text-[10px] bg-blue-50 text-blue-600 py-0.5 px-1.5 rounded"
+                    >
+                      {facility}
+                    </span>
+                  ))}
+                  {hotel.facilities.length > 3 && (
+                    <span className="text-[10px] bg-gray-50 text-gray-500 py-0.5 px-1.5 rounded">
+                      +{hotel.facilities.length - 3}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
-            
-            {/* 地址 */}
-            <div className="flex items-center gap-1 mt-1">
-              <EnvironmentOutlined className="text-gray-400 text-xs" />
-              <Text type="secondary" className="text-xs truncate">
-                {hotel.address}
-              </Text>
+
+            {/* 价格底部 */}
+            <div className="text-right mt-1">
+              <span className="text-xs text-gray-400 mr-1">起</span>
+              <span className="text-red-500 font-bold text-xl">
+                ¥{hotel.minPrice}
+              </span>
             </div>
-            
-            {/* 设施标签 */}
-            {hotel.facilities && hotel.facilities.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-2">
-                {hotel.facilities.slice(0, 3).map((facility, idx) => (
-                  <Tag key={idx} className="text-xs py-0 px-1">
-                    {facility}
-                  </Tag>
-                ))}
-                {hotel.facilities.length > 3 && (
-                  <Text type="secondary" className="text-xs">
-                    +{hotel.facilities.length - 3}
-                  </Text>
-                )}
-              </div>
-            )}
           </div>
         </div>
       </Card>
@@ -401,60 +411,61 @@ export default function HotelListPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col" ref={listRef}>
+    <div className="min-h-screen bg-[#F5F7FA] flex flex-col" ref={listRef}>
       {/* 顶部筛选头 */}
-      <div className="bg-white sticky top-0 z-40 shadow-sm">
+      <div className="bg-white sticky top-0 z-40 shadow-[0_2px_10px_rgba(0,0,0,0.03)] rounded-b-2xl mb-2">
         {/* 城市 + 日期行 */}
-        <div className="px-3 py-2 border-b border-gray-100">
-          <div className="flex items-center gap-2">
+        <div className="px-4 pt-4 pb-2">
+          <div className="flex items-center gap-3">
             {/* 城市选择 */}
             <div 
-              className="flex items-center gap-1 cursor-pointer py-1 px-2 rounded hover:bg-gray-50"
+              className="flex items-center gap-1 cursor-pointer py-1.5 px-3 rounded-full bg-gray-50 hover:bg-gray-100 transition-colors"
               onClick={() => {}}
             >
-              <span className="font-medium text-base">{CITIES.find(c => c.value === city)?.label || '上海'}</span>
-              <span className="text-gray-400">▼</span>
+              <span className="font-bold text-base text-gray-800">
+                {CITIES.find(c => c.value === city)?.label || '上海'}
+              </span>
+              <span className="text-gray-400 text-[10px]">▼</span>
             </div>
-            
-            {/* 分割线 */}
-            <div className="h-4 w-px bg-gray-200"></div>
             
             {/* 日期选择 */}
             <div 
-              className="flex-1 flex items-center gap-1 cursor-pointer py-1 px-2 rounded hover:bg-gray-50"
+              className="flex-1 flex items-center gap-2 cursor-pointer py-1.5 px-3 rounded-full bg-gray-50 hover:bg-gray-100 transition-colors"
               onClick={() => {}}
             >
-              <CalendarOutlined className="text-gray-500" />
-              <span className="text-sm text-gray-600">
+              <CalendarOutlined className="text-blue-500 text-sm" />
+              <span className="text-sm font-medium text-gray-700">
                 {dateRange[0].format('MM/DD')} - {dateRange[1].format('MM/DD')}
               </span>
-              <Tag color="blue" className="ml-1 text-xs">
+              <span className="text-xs text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded">
                 {nights}晚
-              </Tag>
+              </span>
             </div>
           </div>
           
           {/* 搜索框行 */}
-          <div className="mt-2 flex items-center gap-2">
+          <div className="mt-3 flex items-center gap-3">
             <div className="flex-1">
               <Input
                 placeholder="搜索酒店名/位置/品牌"
-                prefix={<SearchOutlined className="text-gray-400" />}
+                prefix={<SearchOutlined className="text-gray-400 text-lg mr-1" />}
                 value={keyword}
                 onChange={(e) => setKeyword(e.target.value)}
                 onPressEnter={handleSearch}
                 allowClear
-                className="rounded-full"
+                size="large"
+                className="rounded-full bg-gray-50 border-transparent hover:border-blue-400 focus:border-blue-500"
               />
             </div>
             <Button 
-              icon={<FilterOutlined />} 
+              size="large"
+              shape="circle"
+              icon={<FilterOutlined className="text-gray-600" />} 
               onClick={() => setFilterVisible(true)}
-              className="relative"
+              className="relative border-gray-200 shadow-sm"
             >
-              筛选
               {getFilterCount() > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold border-2 border-white">
                   {getFilterCount()}
                 </span>
               )}
@@ -463,59 +474,62 @@ export default function HotelListPage() {
         </div>
         
         {/* 快捷筛选标签 */}
-        <div className="px-3 py-2 overflow-x-auto flex gap-2 border-b border-gray-100">
-          <Tag 
-            className={`cursor-pointer ${!priceRange ? 'bg-blue-50 border-blue-500' : ''}`}
+        <div className="px-4 py-3 overflow-x-auto flex gap-2 border-t border-gray-50 [&::-webkit-scrollbar]:hidden">
+          <div 
+            className={`cursor-pointer whitespace-nowrap px-3 py-1 rounded-full text-xs transition-colors ${!priceRange ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
             onClick={() => setPriceRange(null)}
           >
-            价格不限
-          </Tag>
-          <Tag 
-            className={`cursor-pointer ${priceRange?.[1] === 300 ? 'bg-blue-50 border-blue-500' : ''}`}
+            综合推荐
+          </div>
+          <div 
+            className={`cursor-pointer whitespace-nowrap px-3 py-1 rounded-full text-xs transition-colors ${priceRange?.[1] === 300 ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
             onClick={() => setPriceRange([0, 300])}
           >
             ¥300以下
-          </Tag>
-          <Tag 
-            className={`cursor-pointer ${priceRange?.[0] === 300 && priceRange?.[1] === 600 ? 'bg-blue-50 border-blue-500' : ''}`}
+          </div>
+          <div 
+            className={`cursor-pointer whitespace-nowrap px-3 py-1 rounded-full text-xs transition-colors ${priceRange?.[0] === 300 && priceRange?.[1] === 600 ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
             onClick={() => setPriceRange([300, 600])}
           >
             ¥300-600
-          </Tag>
-          <Tag 
-            className={`cursor-pointer ${priceRange?.[0] === 600 ? 'bg-blue-50 border-blue-500' : ''}`}
+          </div>
+          <div 
+            className={`cursor-pointer whitespace-nowrap px-3 py-1 rounded-full text-xs transition-colors ${priceRange?.[0] === 600 ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
             onClick={() => setPriceRange([600, 99999])}
           >
             ¥600以上
-          </Tag>
+          </div>
           {selectedStars.map(star => (
-            <Tag 
+            <div 
               key={star} 
-              closable 
-              onClose={() => setSelectedStars(prev => prev.filter(s => s !== star))}
-              className="bg-blue-50"
+              className="cursor-pointer whitespace-nowrap px-3 py-1 rounded-full text-xs bg-blue-50 text-blue-600 border border-blue-200 flex items-center gap-1"
+              onClick={() => setSelectedStars(prev => prev.filter(s => s !== star))}
             >
-              {star}星
-            </Tag>
+              {star}星 <CloseOutlined className="text-[10px]" />
+            </div>
           ))}
         </div>
       </div>
 
       {/* 酒店列表 */}
-      <div className="flex-1 px-3 py-2">
+      <div className="flex-1 px-4 py-2">
         {loading ? (
-          <div className="flex justify-center items-center py-20">
+          <div className="flex justify-center items-center py-32 flex-col gap-3">
             <Spin size="large" />
+            <span className="text-gray-400 text-sm">正在寻找心仪的酒店...</span>
           </div>
         ) : hotels.length === 0 ? (
-          <div className="py-20">
-            <Empty description="暂无符合条件的酒店" />
+          <div className="py-24 bg-white rounded-2xl mt-4 shadow-sm">
+            <Empty 
+              description={<span className="text-gray-400">换个筛选条件试试吧</span>} 
+              image={Empty.PRESENTED_IMAGE_SIMPLE} 
+            />
           </div>
         ) : (
           <div className="pb-4">
             {/* 结果统计 */}
-            <div className="mb-2 text-sm text-gray-500">
-              为您找到 {hotels.length} 家酒店
+            <div className="mb-3 text-xs text-gray-500 font-medium px-1">
+              为您精选 {hotels.length} 家好店
             </div>
             
             {/* 酒店列表 */}
@@ -523,10 +537,11 @@ export default function HotelListPage() {
             
             {/* 加载更多 */}
             {hasMore && (
-              <div className="text-center py-4">
+              <div className="text-center py-6">
                 <Button 
                   loading={loadingMore} 
                   onClick={loadMore}
+                  className="rounded-full px-6 border-gray-300 text-gray-600"
                 >
                   {loadingMore ? '加载中...' : '点击加载更多'}
                 </Button>
@@ -535,8 +550,10 @@ export default function HotelListPage() {
             
             {/* 无更多数据提示 */}
             {!hasMore && hotels.length > 0 && (
-              <div className="text-center py-4 text-gray-400 text-sm">
-                ─── 已加载全部 ───
+              <div className="text-center py-6 flex items-center justify-center gap-3">
+                <div className="h-[1px] w-12 bg-gray-300"></div>
+                <span className="text-gray-400 text-xs">已经到底啦</span>
+                <div className="h-[1px] w-12 bg-gray-300"></div>
               </div>
             )}
           </div>

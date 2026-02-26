@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { getAllHotels, getHotelsByMerchant, getPublishedHotels, createHotel } from '@/lib/actions/hotel.actions';
 
 /**
@@ -90,6 +91,10 @@ export async function POST(req: NextRequest) {
     }
 
     const hotel = await createHotel(Number(merchantId), formData);
+    
+    // 清除移动端酒店列表页缓存，实现数据实时更新
+    revalidatePath('/hotels/list');
+    
     return NextResponse.json(
       { success: true, message: '酒店信息已保存，等待审核', data: hotel },
       { status: 201 }

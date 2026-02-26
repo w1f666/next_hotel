@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, use } from 'react';
 import {
-  Typography, Breadcrumb, message, Button, Space, Spin, Result, Tag,
+  Typography, Breadcrumb, Button, Space, Spin, Result, Tag, App,
 } from 'antd';
 import {
   ArrowLeftOutlined, HomeOutlined, FormOutlined, LoadingOutlined,
@@ -17,6 +17,7 @@ const { Title, Paragraph } = Typography;
 export default function EditHotelPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
+  const { message } = App.useApp();
   const [hotel, setHotel] = useState<HotelWithRooms | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -69,7 +70,7 @@ export default function EditHotelPage({ params }: { params: Promise<{ id: string
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
-        <Spin indicator={<LoadingOutlined style={{ fontSize: 36 }} spin />} tip="正在加载酒店信息..." />
+        <Spin indicator={<LoadingOutlined style={{ fontSize: 36 }} spin />} />
       </div>
     );
   }

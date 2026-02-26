@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { getHotelById, updateHotel, deleteHotel } from '@/lib/actions/hotel.actions';
 
 /**
@@ -48,6 +49,10 @@ export async function PUT(
     }
 
     const hotel = await updateHotel(Number(id), body);
+    
+    // 清除移动端酒店列表页缓存，实现数据实时更新
+    revalidatePath('/hotels/list');
+    
     return NextResponse.json({
       success: true,
       message: '酒店信息已更新，等待重新审核',
@@ -72,6 +77,10 @@ export async function DELETE(
   try {
     const { id } = await params;
     await deleteHotel(Number(id));
+    
+    // 清除移动端酒店列表页缓存，实现数据实时更新
+    revalidatePath('/hotels/list');
+    
     return NextResponse.json({ success: true, message: '酒店已删除' });
   } catch (error: any) {
     console.error('[DELETE /api/hotels/:id]', error);
