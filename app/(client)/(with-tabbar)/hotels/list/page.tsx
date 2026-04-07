@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef, memo } from 'react';
+import React, { useState, useEffect, useCallback, useRef, memo, Suspense } from 'react';
 import { 
-  Button, Spin, Empty, Modal 
+  App, Button, Spin, Empty, Modal, InputNumber 
 } from 'antd';
 import { 
   EnvironmentOutlined, SearchOutlined, 
@@ -13,7 +13,7 @@ import dayjs, { Dayjs } from 'dayjs';
 import 'dayjs/locale/zh-cn';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 
 dayjs.locale('zh-cn');
 
@@ -62,14 +62,16 @@ const FACILITY_OPTIONS = [
 
 const PRICE_RANGES = [
   { label: '不限', value: 'all' },
-  { label: '¥150以下', value: '0-150' },
-  { label: '¥150-300', value: '150-300' },
-  { label: '¥300-450', value: '300-450' },
-  { label: '¥450-600', value: '450-600' },
+  { label: '¥300以下', value: '0-300' },
+  { label: '¥300-600', value: '300-600' },
   { label: '¥600以上', value: '600+' },
 ];
 
 // ==================== 使用 React.memo 优化的酒店卡片组件 ====================
+/*该interface作用：
+组件定义时写(hotel: HotelItem)意味着将传入的Prop变为hotel，
+然后父组件传入时写<HotelCard hotel={myHotel} />
+意味着将hotel塞到Prop中 */
 interface HotelCardProps {
   hotel: HotelItem;
 }
@@ -84,7 +86,7 @@ const HotelCard = memo(function HotelCard({ hotel }: HotelCardProps) {
     ? { label: '舒适', scoreColor: 'text-stone-600', badge: 'bg-stone-700/65' }
     : { label: '经济', scoreColor: 'text-gray-500', badge: 'bg-gray-600/60' };
 
-  // 模拟评分 (4.0-5.0)
+  // 模拟评分
   const score = (hotel.starRating * 0.8 + 1.2).toFixed(1);
 
   return (
@@ -104,7 +106,7 @@ const HotelCard = memo(function HotelCard({ hotel }: HotelCardProps) {
           />
           {/* 暗色渐变遮罩 */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-          
+
           {/* 左上星级标签 */}
           <div className={`absolute top-3 left-3 ${starConfig.badge} backdrop-blur-md text-white text-[11px] font-semibold px-2.5 py-1 rounded-lg flex items-center gap-1`}>
             <StarFilled className="text-[10px]" />
@@ -187,8 +189,10 @@ const HotelCard = memo(function HotelCard({ hotel }: HotelCardProps) {
 HotelCard.displayName = 'HotelCard';
 
 // ==================== 主页面组件 ====================
-export default function HotelListPage() {
+function HotelListContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const { message } = App.useApp();
   const listRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
   
@@ -237,8 +241,57 @@ export default function HotelListPage() {
   const [selectedStars, setSelectedStars] = useState<number[]>([]);
   const [selectedFacilities, setSelectedFacilities] = useState<string[]>([]);
   
+  // 防抖后的搜索关键词（用于实际请求）
+  const [debouncedKeyword, setDebouncedKeyword] = useState(keyword);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  
+  // 关键词防抖
+  useEffect(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    debounceTimerRef.current = setTimeout(() => {
+      setDebouncedKeyword(keyword);
+    }, 500);
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [keyword]);
+  
   // 计算间夜数
   const nights = dateRange[1].diff(dateRange[0], 'day');
+
+  // ===== URL 同步：筛选条件变化时更新 URL =====
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (debouncedKeyword) params.set('keyword', debouncedKeyword);
+    if (city) params.set('city', city);
+    params.set('checkIn', dateRange[0].format('YYYY-MM-DD'));
+    params.set('checkOut', dateRange[1].format('YYYY-MM-DD'));
+    if (priceRange) {
+      if (priceRange[1] >= 99999) {
+        params.set('price', '600+');
+      } else {
+        params.set('price', `${priceRange[0]}-${priceRange[1]}`);
+      }
+    }
+    if (selectedStars.length > 0) params.set('stars', selectedStars.join(','));
+    if (selectedFacilities.length > 0) params.set('facilities', selectedFacilities.join(','));
+    const qs = params.toString();
+    router.replace(`/hotels/list${qs ? `?${qs}` : ''}`, { scroll: false });
+  }, [debouncedKeyword, city, dateRange, priceRange, selectedStars, selectedFacilities, router]);
+
+  // 城市点击提示
+  const handleCityClick = () => {
+    message.info('暂无其他城市酒店数据，当前默认展示全部酒店');
+  };
+
+  // 日期点击提示
+  const handleDateClick = () => {
+    message.info('日期筛选暂未接入后端，当前默认展示全部酒店');
+  };
 
   // 获取酒店列表数据 - 使用游标分页
   // 使用 ref 存储当前游标值，避免闭包问题
@@ -268,8 +321,8 @@ export default function HotelListPage() {
         params.append('cursor', '');
       }
       
-      if (keyword) {
-        params.append('keyword', keyword);
+      if (debouncedKeyword) {
+        params.append('keyword', debouncedKeyword);
       }
       
       // 添加价格筛选
@@ -302,9 +355,14 @@ export default function HotelListPage() {
           facilities: h.facilities || [],
           createdAt: h.createdAt,
         }));
-        
+/*为防止异步操作异常，导致反复取得同一页数据
+使用哈希去重避免bug*/
         if (isLoadMore) {
-          setHotels(prev => [...prev, ...newHotels]);
+          setHotels(prev => {
+            const existingIds = new Set(prev.map(h => h.id));
+            const uniqueNew = newHotels.filter(h => !existingIds.has(h.id));
+            return [...prev, ...uniqueNew];
+          });
         } else {
           setHotels(newHotels);
         }
@@ -327,14 +385,14 @@ export default function HotelListPage() {
       setLoadingMore(false);
       setRefreshing(false);
     }
-  }, [keyword, priceRange, selectedStars, selectedFacilities]);
+  }, [debouncedKeyword, priceRange, selectedStars, selectedFacilities]);
 
   // 初始加载和筛选变化时重新加载
   useEffect(() => {
     setCursor(null);
     setHasMore(true);
     fetchHotels(false);
-  }, [keyword, priceRange, selectedStars, selectedFacilities]);
+  }, [debouncedKeyword, priceRange, selectedStars, selectedFacilities]);
 
   // 使用 IntersectionObserver 实现触底自动加载
   // 依赖 loading 和 fetchHotels：
@@ -412,12 +470,22 @@ export default function HotelListPage() {
   const [tempPriceRange, setTempPriceRange] = useState<[number, number] | null>(null);
   const [tempStars, setTempStars] = useState<number[]>([]);
   const [tempFacilities, setTempFacilities] = useState<string[]>([]);
+  const [tempCustomMin, setTempCustomMin] = useState<number | undefined>(undefined);
+  const [tempCustomMax, setTempCustomMax] = useState<number | undefined>(undefined);
 
   // 打开弹窗时同步临时状态
   const openFilterModal = () => {
     setTempPriceRange(priceRange);
     setTempStars([...selectedStars]);
     setTempFacilities([...selectedFacilities]);
+    // 同步自定义价格输入
+    if (priceRange) {
+      setTempCustomMin(priceRange[0] || undefined);
+      setTempCustomMax(priceRange[1] >= 99999 ? undefined : priceRange[1]);
+    } else {
+      setTempCustomMin(undefined);
+      setTempCustomMax(undefined);
+    }
     setFilterVisible(true);
   };
 
@@ -457,6 +525,8 @@ export default function HotelListPage() {
             setTempPriceRange(null);
             setTempStars([]);
             setTempFacilities([]);
+            setTempCustomMin(undefined);
+            setTempCustomMax(undefined);
           }}
           className="text-sm text-gray-400 active:text-gray-600"
         >
@@ -482,11 +552,17 @@ export default function HotelListPage() {
                   onClick={() => {
                     if (range.value === 'all') {
                       setTempPriceRange(null);
+                      setTempCustomMin(undefined);
+                      setTempCustomMax(undefined);
                     } else if (range.value === '600+') {
                       setTempPriceRange([600, 99999]);
+                      setTempCustomMin(600);
+                      setTempCustomMax(undefined);
                     } else {
                       const [min, max] = range.value.split('-').map(Number);
                       setTempPriceRange([min, max]);
+                      setTempCustomMin(min);
+                      setTempCustomMax(max);
                     }
                   }}
                 >
@@ -494,6 +570,48 @@ export default function HotelListPage() {
                 </div>
               );
             })}
+          </div>
+          {/* 自定义价格输入 */}
+          <div className="flex items-center gap-2 mt-3">
+            <InputNumber
+              min={0}
+              max={99999}
+              placeholder="最低价"
+              value={tempCustomMin}
+              onChange={(v) => {
+                setTempCustomMin(v ?? undefined);
+                const min = v ?? 0;
+                const max = tempCustomMax ?? 99999;
+                if (min === 0 && max === 99999) {
+                  setTempPriceRange(null);
+                } else {
+                  setTempPriceRange([min, max]);
+                }
+              }}
+              className="flex-1"
+              prefix="¥"
+              size="small"
+            />
+            <span className="text-gray-400 text-xs">—</span>
+            <InputNumber
+              min={0}
+              max={99999}
+              placeholder="最高价"
+              value={tempCustomMax}
+              onChange={(v) => {
+                setTempCustomMax(v ?? undefined);
+                const min = tempCustomMin ?? 0;
+                const max = v ?? 99999;
+                if (min === 0 && max === 99999) {
+                  setTempPriceRange(null);
+                } else {
+                  setTempPriceRange([min, max]);
+                }
+              }}
+              className="flex-1"
+              prefix="¥"
+              size="small"
+            />
           </div>
         </div>
 
@@ -593,7 +711,7 @@ export default function HotelListPage() {
             {/* 城市 */}
             <div 
               className="flex items-center gap-1.5 cursor-pointer py-1.5 px-3 rounded-xl bg-white/10 border border-white/10 active:bg-white/20 transition-all"
-              onClick={() => {}}
+              onClick={handleCityClick}
             >
               <EnvironmentOutlined className="text-white/50 text-xs" />
               <span className="font-semibold text-sm text-white tracking-wide">
@@ -605,7 +723,7 @@ export default function HotelListPage() {
             {/* 日期 */}
             <div 
               className="flex-1 flex items-center gap-2 cursor-pointer py-1.5 px-3 rounded-xl bg-white/10 border border-white/10 active:bg-white/20 transition-all"
-              onClick={() => {}}
+              onClick={handleDateClick}
             >
               <CalendarOutlined className="text-white/50 text-xs" />
               <span className="text-[13px] font-medium text-white/90">
@@ -767,6 +885,9 @@ export default function HotelListPage() {
                   <span className="text-gray-400 text-xs">探索更多好酒店...</span>
                 </div>
               )}
+              {/*在触底加载区域空出一点高度，
+              方便 IntersectionObserver 
+              能够检测到滑动到页面底部的信号。*/}
               {!loadingMore && hasMore && (
                 <div className="h-2"></div>
               )}
@@ -787,5 +908,13 @@ export default function HotelListPage() {
       {/* 筛选弹窗 */}
       {renderFilterModal()}
     </div>
+  );
+}
+
+export default function HotelListPage() {
+  return (
+    <Suspense fallback={<div className="flex justify-center items-center h-screen"><Spin size="large" /></div>}>
+      <HotelListContent />
+    </Suspense>
   );
 }

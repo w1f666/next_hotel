@@ -39,18 +39,16 @@ export default function PublishHotelPage() {
   }, [router, message]);
 
   const handleSubmit = async (formData: HotelFormData) => {
-    if (!merchantId) {
-      message.error('商户ID无效，请重新登录');
-      router.push('/admin/auth');
-      return;
-    }
-
     setLoading(true);
     try {
+      const csrfToken = localStorage.getItem('csrfToken') || '';
       const res = await fetch('/api/hotels', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ merchantId, ...formData }),
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken,
+        },
+        body: JSON.stringify(formData),
       });
       const json = await res.json();
 

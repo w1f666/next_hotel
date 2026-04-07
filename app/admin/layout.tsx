@@ -18,23 +18,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
     // 检查登录状态
     useEffect(() => {
-        const token = localStorage.getItem('token');
+        // middleware 已在服务端拦截未登录用户，这里只做 UI 状态
         const role = localStorage.getItem('role');
         
-        if (!token) {
+        if (!role) {
             router.push('/admin/auth');
             return;
         }
 
         setIsAuthenticated(true);
-        setUserRole(role || 'merchant');
+        setUserRole(role);
 
-        // 只在当前页面不是目标页面时才跳转，避免无限循环
         const currentPath = pathname;
         const targetPath = role === 'merchant' ? '/admin/workspace' : '/admin/hotels';
         
-        // 如果当前不在目标页面（也不是目标页面的子页面），则跳转
-        // 例如：/admin/workspace 是目标页面，/admin/workspace/publish 是子页面，不跳转
         if (!currentPath.startsWith(targetPath)) {
             router.push(targetPath);
         }
@@ -53,7 +50,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         );
     }
 
-    // 未认证时显示 loading
+    // 未认证时显示 loading && 防止页面闪烁
     if (!isAuthenticated) {
         return (
             <div style={{ 
@@ -73,9 +70,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     };
 
     // 退出登录
-    const handleLogout = () => {
-        localStorage.removeItem('token');
+    const handleLogout = async () => {
+        try {
+            await fetch('/api/auth/logout', { method: 'POST' });
+        } catch {
+            // 即使请求失败也清除本地状态
+        }
         localStorage.removeItem('role');
+        localStorage.removeItem('userId');
+        localStorage.removeItem('csrfToken');
         router.push('/admin/auth');
     };
 

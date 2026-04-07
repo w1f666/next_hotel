@@ -4,7 +4,7 @@
   1. Server Actions 通用返回体
   使用泛型 <T> 以便动态推导 data 的具体类型（比如 Hotel[] 或 User）
  */
-export interface ActionResponse<T = any> {
+export interface ActionResponse<T = unknown> {
   success: boolean;
   message?: string;
   data?: T;

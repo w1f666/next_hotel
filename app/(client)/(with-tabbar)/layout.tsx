@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Layout } from 'antd';
+import { App, Layout } from 'antd';
 import { HomeOutlined, ShoppingOutlined, UserOutlined, HeartOutlined } from '@ant-design/icons';
 import { useRouter, usePathname } from 'next/navigation';
 
@@ -19,6 +19,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     ];
 
     return (
+        <App>
         <Layout className="min-h-screen bg-gray-50 max-w-md mx-auto shadow-2xl relative pb-16">
             <Content>
                 {children}
@@ -30,7 +31,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
                     <div
                         key={item.key}
                         onClick={() => router.push(item.key)}
-                        className={`flex flex-col items-center justify-center cursor-pointer transition-colors ${pathname === item.key ? 'text-blue-600' : 'text-gray-400'
+                        className={`flex flex-col items-center justify-center cursor-pointer transition-colors ${pathname.startsWith(item.key) ? 'text-blue-600' : 'text-gray-400'
                             }`}
                     >
                         <div className="text-xl">{item.icon}</div>
@@ -45,5 +46,6 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         }
       `}</style>
         </Layout>
+        </App>
     );
 }

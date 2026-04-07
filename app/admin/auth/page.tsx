@@ -27,16 +27,6 @@ interface AuthFormProps {
   onFinish: (values: any) => void;
 }
 
-// --- 正则表达式定义 ---
-const REGEX = {
-  // 账号：支持两种格式
-  // 1. 商户账号：merchant + 数字，如 merchant01, merchant02
-  // 2. 管理员账号：admin + 数字，如 admin01, admin02
-  username: /^(merchant|admin)\d{2}$/,
-  // 密码：6位数字，如 123456
-  password: /^\d{6}$/
-};
-
 // --- 1. LoginForm 组件 ---
 const LoginForm: React.FC<AuthFormProps> = ({ loading, onFinish }) => {
   const [form] = Form.useForm();
@@ -55,7 +45,6 @@ const LoginForm: React.FC<AuthFormProps> = ({ loading, onFinish }) => {
         name="username"
         rules={[
           { required: true, message: '请输入您的账号!' },
-          { pattern: REGEX.username, message: '账号格式：merchant01 或 admin01' }
         ]}
       >
         <Input prefix={<UserOutlined />} placeholder="请输入商户或管理员账号" size="large" />
@@ -66,7 +55,6 @@ const LoginForm: React.FC<AuthFormProps> = ({ loading, onFinish }) => {
         name="password"
         rules={[
           { required: true, message: '请输入您的密码!' },
-          { pattern: REGEX.password, message: '密码为6位数字，如 123456' }
         ]}
       >
         <Input.Password prefix={<LockOutlined />} placeholder="请输入密码" size="large" />
@@ -100,7 +88,6 @@ const RegisterForm: React.FC<AuthFormProps> = ({ loading, onFinish }) => {
         name="username"
         rules={[
           { required: true, message: '请设置您的账号!' },
-          { pattern: REGEX.username, message: '账号格式：merchant01 或 admin01' }
         ]}
       >
         <Input prefix={<UserOutlined />} placeholder="设置账号" size="large" />
@@ -111,7 +98,6 @@ const RegisterForm: React.FC<AuthFormProps> = ({ loading, onFinish }) => {
         name="password"
         rules={[
           { required: true, message: '请设置密码!' },
-          { pattern: REGEX.password, message: '密码为6位数字，如 123456' }
         ]}
       >
         <Input.Password prefix={<LockOutlined />} placeholder="设置密码" size="large" />
@@ -184,10 +170,13 @@ export default function AdminAuthPage(){
       }
 
       message.success('登录成功');
-      // 存储 token、role 和 userId
-      localStorage.setItem('token', data.token);
+      // token 已通过 HttpOnly Cookie 自动设置，前端只存储非敏感信息用于 UI 展示
       localStorage.setItem('role', data.role);
-      localStorage.setItem('userId', data.userId);
+      localStorage.setItem('userId', String(data.userId));
+      // 存储 CSRF token 用于写操作
+      if (data.csrfToken) {
+        localStorage.setItem('csrfToken', data.csrfToken);
+      }
       
       // 根据角色跳转到不同页面
       if (data.role === 'admin') {

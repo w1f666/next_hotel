@@ -16,11 +16,8 @@ import {
   STAR_RATING_OPTIONS, FACILITY_OPTIONS, CANCEL_POLICY_OPTIONS,
 } from '@/types';
 import type { HotelFormData, HotelRoom, HotelWithRooms } from '@/types';
-import type { UploadFile } from 'antd/es/upload/interface';
 
 const { Title, Text, Paragraph } = Typography;
-const { TextArea } = Input;
-const { Dragger } = Upload;
 
 interface HotelFormProps {
   initialData?: HotelWithRooms;
@@ -73,6 +70,7 @@ const HotelForm: React.FC<HotelFormProps> = ({ initialData, onSubmit, loading, m
     try {
       const res = await fetch('/api/upload', {
         method: 'POST',
+        headers: { 'X-CSRF-Token': localStorage.getItem('csrfToken') || '' },
         body: formData,
       });
       const json = await res.json();
@@ -112,6 +110,7 @@ const HotelForm: React.FC<HotelFormProps> = ({ initialData, onSubmit, loading, m
     try {
       const res = await fetch('/api/upload', {
         method: 'POST',
+        headers: { 'X-CSRF-Token': localStorage.getItem('csrfToken') || '' },
         body: formData,
       });
       const json = await res.json();
@@ -148,6 +147,7 @@ const HotelForm: React.FC<HotelFormProps> = ({ initialData, onSubmit, loading, m
     try {
       const res = await fetch('/api/upload', {
         method: 'PUT',
+        headers: { 'X-CSRF-Token': localStorage.getItem('csrfToken') || '' },
         body: formData,
       });
       const json = await res.json();
@@ -195,7 +195,7 @@ const HotelForm: React.FC<HotelFormProps> = ({ initialData, onSubmit, loading, m
         cancelPolicy: r.cancelPolicy,
         imageUrl: r.imageUrl,
       }))
-    : [{ roomName: '', bedInfo: '', capacity: 2, hasBreakfast: false, price: 0, stock: 10, cancelPolicy: '免费取消' }];
+    : [{ roomName: '', bedInfo: '', capacity: 0, hasBreakfast: false, price: 0, stock: 0, cancelPolicy: '', imageUrl: '' }];
 
   const initialValues = initialData
     ? {
@@ -209,7 +209,6 @@ const HotelForm: React.FC<HotelFormProps> = ({ initialData, onSubmit, loading, m
         rooms: defaultRooms,
       }
     : {
-        starRating: 3,
         facilities: [],
         rooms: defaultRooms,
       };
@@ -233,7 +232,7 @@ const HotelForm: React.FC<HotelFormProps> = ({ initialData, onSubmit, loading, m
         rooms: (values.rooms || []).map((room: any, index: number) => ({
           roomName: room.roomName,
           bedInfo: room.bedInfo || '',
-          capacity: room.capacity || 2,
+          capacity: room.capacity || 0,
           hasBreakfast: room.hasBreakfast || false,
           price: Number(room.price) || 0,
           stock: room.stock || 10,
@@ -352,7 +351,7 @@ const HotelForm: React.FC<HotelFormProps> = ({ initialData, onSubmit, loading, m
                 justifyContent: 'center',
                 cursor: 'pointer',
                 overflow: 'hidden',
-                background: coverImageUrl ? `url(${coverImageUrl}) center/cover` : '#fafafa',
+                background: '#fafafa',
               }}
               onClick={() => {
                 const input = document.createElement('input');
@@ -365,8 +364,10 @@ const HotelForm: React.FC<HotelFormProps> = ({ initialData, onSubmit, loading, m
                 input.click();
               }}
             >
-              {coverImageUrl ? (
-                <div
+              {coverImageUrl && /^\/(uploads|hotel_img)\/[a-zA-Z0-9._-]+$/.test(coverImageUrl) ? (
+                <>
+                  <img src={coverImageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <div
                   style={{
                     position: 'absolute',
                     top: 0,
@@ -386,6 +387,7 @@ const HotelForm: React.FC<HotelFormProps> = ({ initialData, onSubmit, loading, m
                     更换图片
                   </Button>
                 </div>
+                </>
               ) : (
                 <div style={{ textAlign: 'center', color: '#999' }}>
                   <UploadOutlined style={{ fontSize: 32 }} />
@@ -583,11 +585,12 @@ const HotelForm: React.FC<HotelFormProps> = ({ initialData, onSubmit, loading, m
                   <div
                     style={{
                       position: 'absolute',
-                      top: 12,
-                      right: 12,
+                      top: 8,
+                      right: 8,
                       display: 'flex',
                       alignItems: 'center',
                       gap: 8,
+                      zIndex: 10,
                     }}
                   >
                     <Tag color="blue" style={{ margin: 0, borderRadius: 6 }}>
@@ -595,11 +598,12 @@ const HotelForm: React.FC<HotelFormProps> = ({ initialData, onSubmit, loading, m
                     </Tag>
                     {fields.length > 1 && (
                       <Button
-                        type="text"
+                        type="link"
                         danger
                         icon={<DeleteOutlined />}
                         size="small"
                         onClick={() => remove(name)}
+                        style={{ width: 32, height: 32, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                       />
                     )}
                   </div>
@@ -700,7 +704,7 @@ const HotelForm: React.FC<HotelFormProps> = ({ initialData, onSubmit, loading, m
                               justifyContent: 'center',
                               cursor: 'pointer',
                               overflow: 'hidden',
-                              background: roomImageUrls[index] ? `url(${roomImageUrls[index]}) center/cover` : '#fafafa',
+                              background: roomImageUrls[index] && /^\/(uploads|hotel_img)\/[a-zA-Z0-9._-]+$/.test(roomImageUrls[index]) ? undefined : '#fafafa',
                             }}
                             onClick={() => {
                               const input = document.createElement('input');
@@ -713,7 +717,10 @@ const HotelForm: React.FC<HotelFormProps> = ({ initialData, onSubmit, loading, m
                               input.click();
                             }}
                           >
-                            {roomImageUrls[index] ? (
+                            {roomImageUrls[index] && /^\/(uploads|hotel_img)\/[a-zA-Z0-9._-]+$/.test(roomImageUrls[index]) ? (
+                              <img src={roomImageUrls[index]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            ) : null}
+                            {roomImageUrls[index] && /^\/(uploads|hotel_img)\/[a-zA-Z0-9._-]+$/.test(roomImageUrls[index]) ? (
                               <div
                                 style={{
                                   position: 'absolute',

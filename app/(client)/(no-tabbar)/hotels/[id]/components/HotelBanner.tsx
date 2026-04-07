@@ -9,15 +9,15 @@ export default function HotelBanner({ images }: { images: string[] }) {
     <>
       <div className="relative w-full h-56 bg-gray-200">
         <Swiper loop autoplay>
-          {images.map((img, index) => (
-            <Swiper.Item key={index}>
+          {images.map((img) => (
+            <Swiper.Item key={img}>
               <div 
                 className="w-full h-56 cursor-pointer"
                 onClick={() => setVisible(true)}
               >
                 <Image 
                   src={img} 
-                  alt={`banner-${index}`} 
+                  alt="banner" 
                   fit='cover'
                   width='100%'
                   height='100%'

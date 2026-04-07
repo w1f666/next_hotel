@@ -68,7 +68,7 @@ export const getHotelDetail = async (id: string): Promise<HotelDetailResponse> =
       currency: '¥',
       size: '',
       bed: room.bedInfo || '',
-      imageUrl: '',
+      imageUrl: room.imageUrl || '',
     })),
   };
 };
@@ -122,13 +122,13 @@ export async function GET(req: NextRequest) {
         currency: '¥',
         size: '',
         bed: room.bedInfo || '',
-        imageUrl: '',
+        imageUrl: room.imageUrl || '',
       })),
     };
 
     return NextResponse.json(response);
   } catch (error) {
     console.error('获取酒店详情失败:', error);
-    return NextResponse.json({ message: '服务器内部错误' }, { status: 500 });
+    return NextResponse.json({ message: '获取酒店信息失败' }, { status: 500 });
   }
 }

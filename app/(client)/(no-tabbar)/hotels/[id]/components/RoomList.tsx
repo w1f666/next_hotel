@@ -2,10 +2,10 @@
 
 import React from 'react';
 import { Button, Toast, Image } from 'antd-mobile';
-import { Room } from '@/app/api/hotel/route';
+import type { HotelRoom } from '@/types';
 
 
-export default function RoomList({ rooms }: { rooms: Room[] }) {
+export default function RoomList({ rooms }: { rooms: HotelRoom[] }) {
   
   const handleBook = (roomName: string) => {
       Toast.show({
@@ -23,8 +23,8 @@ export default function RoomList({ rooms }: { rooms: Room[] }) {
                 {/* 左侧：房型图片 */}
                 <div className="w-24 h-24 shrink-0 rounded-md overflow-hidden bg-gray-100">
                     <Image 
-                       src={room.imageUrl} 
-                       alt={room.name} 
+                       src={room.imageUrl || ''} 
+                       alt={room.roomName} 
                        fit='cover' 
                        width="100%" 
                        height="100%" 
@@ -39,17 +39,22 @@ export default function RoomList({ rooms }: { rooms: Room[] }) {
                             {room.bedInfo} 
                         </p>
                         <div className="flex flex-wrap gap-1 mt-1.5">
-                            {room.tags?.map(tag => (
-                                <span key={tag} className="text-[10px] text-blue-600 border border-blue-100 bg-blue-50 px-1 rounded">
-                                    {tag}
+                            {room.hasBreakfast && (
+                                <span className="text-[10px] text-blue-600 border border-blue-100 bg-blue-50 px-1 rounded">
+                                    含早
                                 </span>
-                            ))}
+                            )}
+                            {room.cancelPolicy && (
+                                <span className="text-[10px] text-blue-600 border border-blue-100 bg-blue-50 px-1 rounded">
+                                    {room.cancelPolicy}
+                                </span>
+                            )}
                         </div>
                     </div>
 
                     <div className="flex justify-between items-end mt-2">
                         <div className="text-red-500 flex items-baseline">
-                            <span className="text-xs font-medium">{room.currency}</span>
+                            <span className="text-xs font-medium">¥</span>
                             <span className="text-xl font-bold ml-0.5">{room.price}</span>
                             <span className="text-[10px] text-gray-400 ml-1 font-normal">起</span>
                         </div>
@@ -63,7 +68,7 @@ export default function RoomList({ rooms }: { rooms: Room[] }) {
                                 paddingRight: '16px',
                                 fontWeight: 'bold' 
                             }}
-                            onClick={() => handleBook(room.name)}
+                            onClick={() => handleBook(room.roomName)}
                         >
                             预订
                         </Button>

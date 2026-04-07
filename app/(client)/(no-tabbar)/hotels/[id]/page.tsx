@@ -9,14 +9,7 @@ import HotelNavBar from "./components/HotelNavBar";
 import HotelBanner from "./components/HotelBanner";
 import HotelInfo from "./components/HotelInfo";
 import RoomList from "./components/RoomList";
-
-export interface HotelDetailResponse {
-  id: number | string;
-  name: string;
-  images?: string[]; //  标记为可选
-  rooms?: any[];     //  标记为可选
-  [key: string]: any; 
-}
+import type { HotelWithRooms } from "@/types";
 
 // --- React 19 兼容性补丁 ---
 unstableSetRender((node: React.ReactNode, container: Element | DocumentFragment) => {
@@ -45,7 +38,7 @@ const getNights = (start: Date, end: Date) => {
 };
 
 export default function HotelDetailPage() {
-  const [data, setData] = useState<HotelDetailResponse | null>(null);
+  const [data, setData] = useState<HotelWithRooms | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   

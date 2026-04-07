@@ -1,12 +1,26 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'default-secret-key-change-it';
+import {
+  signToken,
+  createTokenCookie,
+  createCsrfCookie,
+  generateCsrfToken,
+  checkRateLimit,
+} from '@/lib/auth';
 
 export async function POST(request: Request) {
   try {
+    // 速率限制
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+    const rateCheck = checkRateLimit(ip);
+    if (!rateCheck.allowed) {
+      return NextResponse.json(
+        { message: '登录尝试过于频繁，请稍后再试' },
+        { status: 429, headers: { 'Retry-After': String(Math.ceil(rateCheck.retryAfterMs / 1000)) } }
+      );
+    }
+
     const body = await request.json();
     const { username, password } = body;
 
@@ -14,7 +28,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: '账号或密码不能为空' }, { status: 400 });
     }
 
-    // 1. 根据用户名查找用户
     const user = await prisma.user.findUnique({
       where: { username },
     });
@@ -23,28 +36,28 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: '账号或密码错误' }, { status: 401 });
     }
 
-    // 2. 比对密码 (数据库里的哈希值 vs 用户输入的明文)
     const isPasswordValid = await bcrypt.compare(password, user.password);
-
     if (!isPasswordValid) {
       return NextResponse.json({ message: '账号或密码错误' }, { status: 401 });
     }
 
-    // 生成 JWT Token
-    const token = jwt.sign(
-      { userId: user.id, username: user.username, role: user.role },
-      JWT_SECRET,
-      { expiresIn: '24h' }
-    );
+    // 签发 JWT
+    const token = signToken({ userId: user.id, username: user.username, role: user.role as 'merchant' | 'admin' });
+    const csrfToken = generateCsrfToken();
 
-    return NextResponse.json({
+    // 通过 Set-Cookie 写入 HttpOnly cookie（token）+ 可读 cookie（csrf）
+    const response = NextResponse.json({
       message: '登录成功',
-      token,
       role: user.role,
       username: user.username,
-      userId: user.id
+      userId: user.id,
+      csrfToken, // 前端需要存储并在写操作中带上 X-CSRF-Token header
     });
 
+    response.headers.append('Set-Cookie', createTokenCookie(token));
+    response.headers.append('Set-Cookie', createCsrfCookie(csrfToken));
+
+    return response;
   } catch (error) {
     console.error('登录错误:', error);
     return NextResponse.json({ message: '服务器内部错误' }, { status: 500 });

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   Table, Tag, Space, Button, Typography, Input, Empty, Card,
   Statistic, Row, Col, Popconfirm, message, Skeleton, Badge, Flex,
@@ -21,6 +21,23 @@ export default function WorkspacePage() {
   const [hotels, setHotels] = useState<Hotel[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState('');
+  const [debouncedSearchText, setDebouncedSearchText] = useState('');
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 搜索防抖
+  useEffect(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    debounceTimerRef.current = setTimeout(() => {
+      setDebouncedSearchText(searchText);
+    }, 300);
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [searchText]);
 
   // 从登录态获取 merchantId
   const merchantId = typeof window !== 'undefined' ? Number(localStorage.getItem('userId')) : 0;
@@ -46,7 +63,10 @@ export default function WorkspacePage() {
 
   const handleDelete = async (id: number) => {
     try {
-      const res = await fetch(`/api/hotels/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/hotels/${id}`, {
+        method: 'DELETE',
+        headers: { 'X-CSRF-Token': localStorage.getItem('csrfToken') || '' },
+      });
       const json = await res.json();
       if (json.success) {
         message.success('已删除');
@@ -68,8 +88,8 @@ export default function WorkspacePage() {
   };
 
   // 搜索过滤
-  const filteredHotels = searchText
-    ? hotels.filter((h) => h.name.toLowerCase().includes(searchText.toLowerCase()))
+  const filteredHotels = debouncedSearchText
+    ? hotels.filter((h) => h.name.toLowerCase().includes(debouncedSearchText.toLowerCase()))
     : hotels;
 
   const columns = [
@@ -84,18 +104,21 @@ export default function WorkspacePage() {
               width: 64,
               height: 64,
               borderRadius: 10,
-              background: record.coverImage
-                ? `url(${record.coverImage}) center/cover`
-                : 'url(/hotel_img/hotel1.png) center/cover',
+              overflow: 'hidden',
               flexShrink: 0,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               color: '#fff',
               fontSize: 20,
+              background: '#f0f0f0',
             }}
           >
-            {!record.coverImage && <ShopOutlined />}
+            {record.coverImage && /^\/(uploads|hotel_img)\/[a-zA-Z0-9._-]+$/.test(record.coverImage) ? (
+              <img src={record.coverImage} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              <ShopOutlined style={{ color: '#999' }} />
+            )}
           </div>
           <div style={{ minWidth: 0 }}>
             <Text strong style={{ fontSize: 15, display: 'block' }} ellipsis>

@@ -15,6 +15,7 @@ model User {
   role      String   @default("merchant")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  hotels    Hotel[]
 
   @@map("users")
 }
@@ -35,6 +36,8 @@ model Hotel {
   rejectReason String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+  merchant     User      @relation(fields: [merchantId], references: [id])
+  rooms        HotelRoom[]
 
   @@index([merchantId])
   @@map("hotels")
@@ -53,7 +56,9 @@ model HotelRoom {
   cancelPolicy String?  @default("免费取消")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-  imageUrl     String?  
+  imageUrl     String?
+  hotel        Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
   @@index([hotelId])
   @@map("hotel_rooms")
 }

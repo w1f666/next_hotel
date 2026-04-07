@@ -166,7 +166,7 @@ export default function HotelTableClient({ initialData, onDeleted, onUpdated }: 
             </>
           )}
 
-          {/* 已通过/已拒绝状态显示编辑和删除 */}
+          {/* 已通过/已拒绝状态显示删除 */}
           {record.status !== 0 && (
             <>
               <Popconfirm

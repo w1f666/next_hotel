@@ -45,9 +45,13 @@ export default function EditHotelPage({ params }: { params: Promise<{ id: string
   const handleSubmit = async (formData: HotelFormData) => {
     setSubmitting(true);
     try {
+      const csrfToken = localStorage.getItem('csrfToken') || '';
       const res = await fetch(`/api/hotels/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken,
+        },
         body: JSON.stringify(formData),
       });
       const json = await res.json();

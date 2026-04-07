@@ -1,21 +1,69 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
+import { validateMagicBytes } from '@/lib/auth';
 
 // 定义上传目录
 const UPLOAD_DIR = path.join(process.cwd(), 'public', 'uploads');
+
+// MIME 类型 → 安全扩展名映射（同时作为允许的文件类型白名单）
+const MIME_TO_EXT: Record<string, string> = {
+  'image/jpeg': '.jpg',
+  'image/jpg': '.jpg',
+  'image/png': '.png',
+  'image/gif': '.gif',
+  'image/webp': '.webp',
+};
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_BATCH_FILES = 10;
 
 // 确保上传目录存在
 async function ensureUploadDir() {
   try {
     await mkdir(UPLOAD_DIR, { recursive: true });
-  } catch (error) {
-    // 目录可能已存在，忽略错误
+  } catch {
+    // 目录可能已存在
   }
+}
+
+async function processFile(file: File): Promise<{ url: string; filename: string; originalName: string; size: number } | null> {
+  // 验证 MIME 类型
+  if (!MIME_TO_EXT[file.type]) return null;
+
+  // 验证文件大小
+  if (file.size > MAX_FILE_SIZE) return null;
+
+  const bytes = await file.arrayBuffer();
+  const buffer = Buffer.from(bytes);
+
+  // 验证文件魔术字节
+  if (!validateMagicBytes(buffer, file.type)) return null;
+
+  const ext = MIME_TO_EXT[file.type];
+  const timestamp = Date.now();
+  const randomStr = Math.random().toString(36).substring(2, 8);
+  const filename = `${timestamp}-${randomStr}${ext}`;
+
+  const filePath = path.join(UPLOAD_DIR, filename);
+  await writeFile(filePath, buffer);
+
+  return {
+    url: `/uploads/${filename}`,
+    filename,
+    originalName: file.name,
+    size: file.size,
+  };
 }
 
 export async function POST(req: NextRequest) {
   try {
+    // 鉴权由 middleware 完成，这里二次确认
+    const userId = req.headers.get('x-user-id');
+    if (!userId) {
+      return NextResponse.json({ success: false, message: '未登录' }, { status: 401 });
+    }
+
     const formData = await req.formData();
     const file = formData.get('file') as File | null;
 
@@ -26,42 +74,41 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 验证文件类型
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-    if (!allowedTypes.includes(file.type)) {
+    if (!MIME_TO_EXT[file.type]) {
       return NextResponse.json(
         { success: false, message: '不支持的图片格式' },
         { status: 400 }
       );
     }
 
-    // 验证文件大小 (最大 5MB)
-    const maxSize = 5 * 1024 * 1024;
-    if (file.size > maxSize) {
+    if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json(
         { success: false, message: '图片大小不能超过5MB' },
         { status: 400 }
       );
     }
 
-    // 生成唯一文件名
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    
-    // 获取文件扩展名
-    const ext = path.extname(file.name);
+
+    // 校验文件魔术字节
+    if (!validateMagicBytes(buffer, file.type)) {
+      return NextResponse.json(
+        { success: false, message: '文件内容与类型不匹配' },
+        { status: 400 }
+      );
+    }
+
+    const ext = MIME_TO_EXT[file.type];
     const timestamp = Date.now();
     const randomStr = Math.random().toString(36).substring(2, 8);
     const filename = `${timestamp}-${randomStr}${ext}`;
 
-    // 确保目录存在
     await ensureUploadDir();
 
-    // 写入文件
     const filePath = path.join(UPLOAD_DIR, filename);
     await writeFile(filePath, buffer);
 
-    // 返回本地路径（相对于public目录）
     const fileUrl = `/uploads/${filename}`;
 
     return NextResponse.json({
@@ -69,16 +116,15 @@ export async function POST(req: NextRequest) {
       message: '上传成功',
       data: {
         url: fileUrl,
-        filename: filename,
+        filename,
         originalName: file.name,
         size: file.size,
       }
     });
-
   } catch (error) {
     console.error('上传文件错误:', error);
     return NextResponse.json(
-      { success: false, message: '服务器内部错误' },
+      { success: false, message: '上传失败' },
       { status: 500 }
     );
   }
@@ -87,6 +133,11 @@ export async function POST(req: NextRequest) {
 // 处理多文件上传
 export async function PUT(req: NextRequest) {
   try {
+    const userId = req.headers.get('x-user-id');
+    if (!userId) {
+      return NextResponse.json({ success: false, message: '未登录' }, { status: 401 });
+    }
+
     const formData = await req.formData();
     const files = formData.getAll('files') as File[];
 
@@ -97,42 +148,23 @@ export async function PUT(req: NextRequest) {
       );
     }
 
-    const uploadedFiles: any[] = [];
+    // 限制批量上传数量
+    if (files.length > MAX_BATCH_FILES) {
+      return NextResponse.json(
+        { success: false, message: `单次最多上传${MAX_BATCH_FILES}个文件` },
+        { status: 400 }
+      );
+    }
 
-    // 确保目录存在
     await ensureUploadDir();
 
+    const uploadedFiles: { url: string; filename: string; originalName: string; size: number }[] = [];
+
     for (const file of files) {
-      // 验证文件类型
-      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-      if (!allowedTypes.includes(file.type)) {
-        continue;
+      const result = await processFile(file);
+      if (result) {
+        uploadedFiles.push(result);
       }
-
-      // 验证文件大小
-      const maxSize = 5 * 1024 * 1024;
-      if (file.size > maxSize) {
-        continue;
-      }
-
-      // 生成唯一文件名
-      const bytes = await file.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-      const ext = path.extname(file.name);
-      const timestamp = Date.now();
-      const randomStr = Math.random().toString(36).substring(2, 8);
-      const filename = `${timestamp}-${randomStr}${ext}`;
-
-      // 写入文件
-      const filePath = path.join(UPLOAD_DIR, filename);
-      await writeFile(filePath, buffer);
-
-      uploadedFiles.push({
-        url: `/uploads/${filename}`,
-        filename: filename,
-        originalName: file.name,
-        size: file.size,
-      });
     }
 
     return NextResponse.json({
@@ -140,11 +172,10 @@ export async function PUT(req: NextRequest) {
       message: `成功上传 ${uploadedFiles.length} 个文件`,
       data: uploadedFiles
     });
-
   } catch (error) {
     console.error('上传文件错误:', error);
     return NextResponse.json(
-      { success: false, message: '服务器内部错误' },
+      { success: false, message: '上传失败' },
       { status: 500 }
     );
   }

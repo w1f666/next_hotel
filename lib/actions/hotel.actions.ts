@@ -2,15 +2,21 @@
 /* 酒店增删改查 —— Server Actions (Prisma) */
 
 import prisma from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { ActionResponse } from '@/types/api';
-import type { Hotel } from '@prisma/client';
 import type { HotelFormData } from '@/types';
+import { getAuthFromCookies } from '@/lib/auth';
 
 /**
- * 获取管理员酒店列表（所有酒店，用于审核管理）
+ * 获取管理员酒店列表（所有酒店，用于审核管理）— 需要 admin 角色
  */
-export async function getAdminHotels(): Promise<ActionResponse<{ hotels: any[] }>> {
+export async function getAdminHotels(): Promise<ActionResponse<{ hotels: ReturnType<typeof serializeHotel>[] }>> {
   try {
+    const auth = await getAuthFromCookies();
+    if (!auth || auth.role !== 'admin') {
+      return { success: false, message: '无权访问' };
+    }
+
     const hotels = await prisma.hotel.findMany({
       orderBy: {
         updatedAt: 'desc',
@@ -68,7 +74,7 @@ export async function getAllHotels(params?: {
 }) {
   const { page = 1, pageSize = 10, cursor, status, keyword, minPrice, maxPrice, starRating, facilities } = params || {};
 
-  const where: any = {};
+  const where: Prisma.HotelWhereInput = {};
   if (status !== undefined && status !== null) {
     where.status = status;
   }
@@ -102,9 +108,6 @@ export async function getAllHotels(params?: {
       facilities: { array_contains: f },
     }));
   }
-
-  let hotels;
-  let total: number;
   
   // 使用游标分页（优先）- 通过检查 cursor 参数来判断是否使用游标分页
   // cursor 为 undefined 表示使用传统分页，cursor 为 null 或 number 表示使用游标分页
@@ -114,17 +117,16 @@ export async function getAllHotels(params?: {
       ? { ...where, id: { lt: cursor } }  // 获取 id 小于游标的记录
       : where;  // 首次加载，不加 id 限制
     
-    [hotels, total] = await Promise.all([
-      prisma.hotel.findMany({
-        where: cursorWhere,
-        orderBy: { id: 'desc' },
-        take: pageSize,
-      }),
-      prisma.hotel.count({ where }),
-    ]);
-    
-    const nextCursor = hotels.length === pageSize ? hotels[hotels.length - 1].id : null;
-    const hasMore = hotels.length === pageSize;
+    // 多取一条用于判断是否还有更多，避免 hotels.length === pageSize 误判
+    const hotelsWithExtra = await prisma.hotel.findMany({
+      where: cursorWhere,
+      orderBy: { id: 'desc' },
+      take: pageSize + 1,
+    });
+
+    const hasMore = hotelsWithExtra.length > pageSize;
+    const hotels = hasMore ? hotelsWithExtra.slice(0, pageSize) : hotelsWithExtra;
+    const nextCursor = hasMore ? hotels[hotels.length - 1].id : null;
     
     return {
       data: hotels.map(serializeHotel),
@@ -156,23 +158,23 @@ export async function getAllHotels(params?: {
 }
 
 /**
- * 获取酒店详情（含房型）
+ * 获取酒店详情（含房型）—— 使用 include 单次查询
  */
 export async function getHotelById(id: number) {
   const hotel = await prisma.hotel.findUnique({
     where: { id },
+    include: {
+      rooms: {
+        orderBy: { price: 'asc' },
+      },
+    },
   });
 
   if (!hotel) return null;
 
-  const rooms = await prisma.hotelRoom.findMany({
-    where: { hotelId: id },
-    orderBy: { price: 'asc' },
-  });
-
   return {
     ...serializeHotel(hotel),
-    rooms: rooms.map(serializeRoom),
+    rooms: hotel.rooms.map(serializeRoom),
   };
 }
 
@@ -221,64 +223,80 @@ export async function createHotel(merchantId: number, data: HotelFormData) {
 }
 
 /**
- * 更新酒店 + 房型
+ * 更新酒店 + 房型（事务保证原子性）
  */
 export async function updateHotel(hotelId: number, data: HotelFormData) {
   const minPrice = data.rooms.length > 0
     ? Math.min(...data.rooms.map((r) => r.price))
     : 0;
 
-  const hotel = await prisma.hotel.update({
-    where: { id: hotelId },
-    data: {
-      name: data.name,
-      address: data.address,
-      starRating: data.starRating,
-      minPrice,
-      openingTime: data.openingTime ? new Date(data.openingTime) : null,
-      facilities: data.facilities || [],
-      coverImage: data.coverImage || null,
-      gallery: data.gallery || [],
-      status: 0, // 修改后重新进入待审核
-    },
-  });
-
-  // 先删除旧房型，再重建
-  await prisma.hotelRoom.deleteMany({ where: { hotelId } });
-
-  if (data.rooms.length > 0) {
-    await prisma.hotelRoom.createMany({
-      data: data.rooms.map((room) => ({
-        hotelId,
-        roomName: room.roomName,
-        bedInfo: room.bedInfo,
-        capacity: room.capacity,
-        hasBreakfast: room.hasBreakfast,
-        price: room.price,
-        stock: room.stock,
-        cancelPolicy: room.cancelPolicy,
-        imageUrl: room.imageUrl || null,
-      })),
+  const hotel = await prisma.$transaction(async (tx) => {
+    const updatedHotel = await tx.hotel.update({
+      where: { id: hotelId },
+      data: {
+        name: data.name,
+        address: data.address,
+        starRating: data.starRating,
+        minPrice,
+        openingTime: data.openingTime ? new Date(data.openingTime) : null,
+        facilities: data.facilities || [],
+        coverImage: data.coverImage || null,
+        gallery: data.gallery || [],
+        status: 0, // 修改后重新进入待审核
+      },
     });
-  }
+
+    // 先删除旧房型，再重建
+    await tx.hotelRoom.deleteMany({ where: { hotelId } });
+
+    if (data.rooms.length > 0) {
+      await tx.hotelRoom.createMany({
+        data: data.rooms.map((room) => ({
+          hotelId,
+          roomName: room.roomName,
+          bedInfo: room.bedInfo,
+          capacity: room.capacity,
+          hasBreakfast: room.hasBreakfast,
+          price: room.price,
+          stock: room.stock,
+          cancelPolicy: room.cancelPolicy,
+          imageUrl: room.imageUrl || null,
+        })),
+      });
+    }
+
+    return updatedHotel;
+  });
 
   return serializeHotel(hotel);
 }
 
 /**
- * 删除酒店及其房型
+ * 删除酒店（关联房型通过 onDelete: Cascade 自动删除）—— 需要鉴权 + 归属校验
  */
 export async function deleteHotel(hotelId: number) {
-  await prisma.hotelRoom.deleteMany({ where: { hotelId } });
+  const auth = await getAuthFromCookies();
+  if (!auth) throw new Error('未登录');
+
+  if (auth.role === 'merchant') {
+    const hotel = await prisma.hotel.findUnique({ where: { id: hotelId }, select: { merchantId: true } });
+    if (!hotel || hotel.merchantId !== auth.userId) throw new Error('无权操作');
+  }
+
   await prisma.hotel.delete({ where: { id: hotelId } });
   return true;
 }
 
 /**
- * 审核酒店 - 通过
+ * 审核酒店 - 通过（仅 admin）
  */
 export async function approveHotel(hotelId: number): Promise<ActionResponse> {
   try {
+    const auth = await getAuthFromCookies();
+    if (!auth || auth.role !== 'admin') {
+      return { success: false, message: '无权操作' };
+    }
+
     await prisma.hotel.update({
       where: { id: hotelId },
       data: { status: 1 },
@@ -290,10 +308,15 @@ export async function approveHotel(hotelId: number): Promise<ActionResponse> {
 }
 
 /**
- * 审核酒店 - 拒绝
+ * 审核酒店 - 拒绝（仅 admin）
  */
 export async function rejectHotel(hotelId: number, reason: string): Promise<ActionResponse> {
   try {
+    const auth = await getAuthFromCookies();
+    if (!auth || auth.role !== 'admin') {
+      return { success: false, message: '无权操作' };
+    }
+
     await prisma.hotel.update({
       where: { id: hotelId },
       data: { 

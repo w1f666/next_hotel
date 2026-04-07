@@ -324,6 +324,19 @@ export default function HotelSearchPage() {
           height: 3px !important;
           border-radius: 3px;
         }
+        /* 日期选择器移动端适配 - 单月显示 + 左右翻页 */
+        @media (max-width: 640px) {
+          .ant-picker-dropdown .ant-picker-panels > .ant-picker-panel:last-child {
+            display: none !important;
+          }
+          .ant-picker-dropdown .ant-picker-panel:first-child .ant-picker-header-next-btn,
+          .ant-picker-dropdown .ant-picker-panel:first-child .ant-picker-header-super-next-btn {
+            visibility: visible !important;
+          }
+          .ant-picker-dropdown {
+            max-width: 100vw;
+          }
+        }
       `}</style>
         </div>
     );

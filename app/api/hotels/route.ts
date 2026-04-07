@@ -4,19 +4,14 @@ import { getAllHotels, getHotelsByMerchant, getPublishedHotels, createHotel } fr
 
 /**
  * GET /api/hotels — 获取酒店列表
- * 查询参数: 
- *   - merchantId: 商户ID（返回该商户的酒店）
- *   - published: true/false（返回已发布的酒店，用于C端）
- *   - cursor: 游标分页（用于无限滚动）
- *   - page, pageSize, status, keyword: 传统分页和筛选参数
  */
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const merchantId = searchParams.get('merchantId');
     const published = searchParams.get('published');
-    const page = Number(searchParams.get('page') || 1);
-    const pageSize = Number(searchParams.get('pageSize') || 10);
+    const page = Math.max(Number(searchParams.get('page') || 1), 1);
+    const pageSize = Math.min(Math.max(Number(searchParams.get('pageSize') || 10), 1), 100);
     
     // 处理游标参数：如果存在 cursor 参数（即使是空字符串），则使用游标分页
     const cursorParam = searchParams.get('cursor');
@@ -73,10 +68,10 @@ export async function GET(req: NextRequest) {
     });
 
     return NextResponse.json({ success: true, ...result });
-  } catch (error: any) {
+  } catch (error) {
     console.error('[GET /api/hotels]', error);
     return NextResponse.json(
-      { success: false, message: error.message || '服务器内部错误' },
+      { success: false, message: '获取酒店列表失败' },
       { status: 500 }
     );
   }
@@ -87,15 +82,21 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const { merchantId, ...formData } = body;
+    // 从 middleware 注入的请求头获取已验证的用户信息
+    const userId = Number(req.headers.get('x-user-id'));
+    const userRole = req.headers.get('x-user-role');
 
-    if (!merchantId) {
-      return NextResponse.json(
-        { success: false, message: '缺少商户ID' },
-        { status: 400 }
-      );
+    if (!userId) {
+      return NextResponse.json({ success: false, message: '未登录' }, { status: 401 });
     }
+
+    // 只有 merchant 可以创建酒店
+    if (userRole !== 'merchant') {
+      return NextResponse.json({ success: false, message: '无权操作' }, { status: 403 });
+    }
+
+    const body = await req.json();
+    const { ...formData } = body;
 
     if (!formData.name || !formData.address) {
       return NextResponse.json(
@@ -104,19 +105,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const hotel = await createHotel(Number(merchantId), formData);
-    
-    // 清除移动端酒店列表页缓存，实现数据实时更新
+    // merchantId 从 token 获取，不再信任客户端
+    const hotel = await createHotel(userId, formData);
+
     revalidatePath('/hotels/list');
-    
+
     return NextResponse.json(
       { success: true, message: '酒店信息已保存，等待审核', data: hotel },
       { status: 201 }
     );
-  } catch (error: any) {
+  } catch (error) {
     console.error('[POST /api/hotels]', error);
     return NextResponse.json(
-      { success: false, message: error.message || '创建失败' },
+      { success: false, message: '创建失败' },
       { status: 500 }
     );
   }
