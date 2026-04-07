@@ -49,15 +49,6 @@ const AUTH_PAGE = '/admin/auth';
 /** 写操作需要 CSRF 校验的方法 */
 const CSRF_METHODS = ['POST', 'PUT', 'DELETE', 'PATCH'];
 
-function addSecurityHeaders(response: NextResponse): NextResponse {
-    response.headers.set('X-Content-Type-Options', 'nosniff');
-    response.headers.set('X-Frame-Options', 'DENY');
-    response.headers.set('X-XSS-Protection', '1; mode=block');
-    response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-    response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
-    return response;
-}
-
 export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
     const method = request.method;
@@ -67,7 +58,7 @@ export async function proxy(request: NextRequest) {
         const userAgent = request.headers.get('user-agent') || '';
         const isMobile = isMobileRequest(userAgent);
         const target = isMobile ? '/hotels' : '/admin';
-        return addSecurityHeaders(NextResponse.redirect(new URL(target, request.url)));
+        return NextResponse.redirect(new URL(target, request.url));
     }
 
     // ── 2. 受保护的 API 路由鉴权 ──
@@ -79,15 +70,11 @@ export async function proxy(request: NextRequest) {
     if (isProtectedApi) {
         const token = request.cookies.get('token')?.value;
         if (!token) {
-            return addSecurityHeaders(
-                NextResponse.json({ success: false, message: '未登录' }, { status: 401 })
-            );
+            return NextResponse.json({ success: false, message: '未登录' }, { status: 401 });
         }
         const payload = await verifyTokenEdge(token);
         if (!payload) {
-            return addSecurityHeaders(
-                NextResponse.json({ success: false, message: '登录已过期' }, { status: 401 })
-            );
+            return NextResponse.json({ success: false, message: '登录已过期' }, { status: 401 });
         }
 
         // CSRF 校验：对比 cookie csrf_token 与请求头 X-CSRF-Token
@@ -95,9 +82,7 @@ export async function proxy(request: NextRequest) {
             const cookieCsrf = request.cookies.get('csrf_token')?.value;
             const headerCsrf = request.headers.get('x-csrf-token');
             if (!cookieCsrf || !headerCsrf || cookieCsrf !== headerCsrf) {
-                return addSecurityHeaders(
-                    NextResponse.json({ success: false, message: 'CSRF 校验失败' }, { status: 403 })
-                );
+                return NextResponse.json({ success: false, message: 'CSRF 校验失败' }, { status: 403 });
             }
         }
 
@@ -109,19 +94,19 @@ export async function proxy(request: NextRequest) {
         const response = NextResponse.next({
             request: { headers: requestHeaders },
         });
-        return addSecurityHeaders(response);
+        return response;
     }
 
     // ── 3. Admin 页面鉴权（排除登录页） ──
     if (pathname.startsWith(PROTECTED_PAGE_PREFIX) && pathname !== AUTH_PAGE) {
         const token = request.cookies.get('token')?.value;
         if (!token || !(await verifyTokenEdge(token))) {
-            return addSecurityHeaders(NextResponse.redirect(new URL(AUTH_PAGE, request.url)));
+            return NextResponse.redirect(new URL(AUTH_PAGE, request.url));
         }
     }
 
     // ── 4. 其他路由直接放行 ──
-    return addSecurityHeaders(NextResponse.next());
+    return NextResponse.next();
 }
 
 export const config = {

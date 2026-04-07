@@ -88,7 +88,7 @@ export function createTokenCookie(token: string): string {
 export function createCsrfCookie(csrfToken: string): string {
   const maxAge = 60 * 60 * 24;
   // CSRF cookie 不能是 HttpOnly，前端需要读取它
-  return `${CSRF_COOKIE_NAME}=${csrfToken}; SameSite=Lax; Path=/; Max-Age=${maxAge}`;
+  return `${CSRF_COOKIE_NAME}=${csrfToken}; HttpOnly;SameSite=Lax; Path=/; Max-Age=${maxAge}`;
 }
 
 export function createClearTokenCookie(): string {
@@ -97,7 +97,7 @@ export function createClearTokenCookie(): string {
 }
 
 export function createClearCsrfCookie(): string {
-  return `${CSRF_COOKIE_NAME}=; SameSite=Lax; Path=/; Max-Age=0`;
+  return `${CSRF_COOKIE_NAME}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0`;
 }
 
 /**
