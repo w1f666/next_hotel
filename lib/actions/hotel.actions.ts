@@ -1,32 +1,10 @@
-'use server';
-/* 酒店增删改查 —— Server Actions (Prisma) */
+/* 酒店增删改查 —— 数据服务层 (Prisma) */
 
 import prisma from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
-import { ActionResponse } from '@/types/api';
+import { serializeHotel, serializeRoom } from '@/lib/serialize';
 import type { HotelFormData } from '@/types';
-import { getAuthFromCookies } from '@/lib/auth';
 
-/**
- * 获取管理员酒店列表（所有酒店，用于审核管理）— 需要 admin 角色
- */
-export async function getAdminHotels(): Promise<ActionResponse<{ hotels: ReturnType<typeof serializeHotel>[] }>> {
-  try {
-    const auth = await getAuthFromCookies();
-    if (!auth || auth.role !== 'admin') {
-      return { success: false, message: '无权访问' };
-    }
-
-    const hotels = await prisma.hotel.findMany({
-      orderBy: {
-        updatedAt: 'desc',
-      },
-    });
-    return { success: true, message: '获取酒店列表成功', data: { hotels: hotels.map(serializeHotel) } };
-  } catch (error) {
-    return { success: false, message: '获取酒店列表失败' };
-  }
-}
 
 /**
  * 获取C端酒店列表（已发布的酒店，用于客户端展示）
@@ -272,84 +250,10 @@ export async function updateHotel(hotelId: number, data: HotelFormData) {
 }
 
 /**
- * 删除酒店（关联房型通过 onDelete: Cascade 自动删除）—— 需要鉴权 + 归属校验
+ * 删除酒店（关联房型通过 onDelete: Cascade 自动删除）
  */
 export async function deleteHotel(hotelId: number) {
-  const auth = await getAuthFromCookies();
-  if (!auth) throw new Error('未登录');
-
-  if (auth.role === 'merchant') {
-    const hotel = await prisma.hotel.findUnique({ where: { id: hotelId }, select: { merchantId: true } });
-    if (!hotel || hotel.merchantId !== auth.userId) throw new Error('无权操作');
-  }
-
   await prisma.hotel.delete({ where: { id: hotelId } });
   return true;
 }
 
-/**
- * 审核酒店 - 通过（仅 admin）
- */
-export async function approveHotel(hotelId: number): Promise<ActionResponse> {
-  try {
-    const auth = await getAuthFromCookies();
-    if (!auth || auth.role !== 'admin') {
-      return { success: false, message: '无权操作' };
-    }
-
-    await prisma.hotel.update({
-      where: { id: hotelId },
-      data: { status: 1 },
-    });
-    return { success: true, message: '审核通过' };
-  } catch (error) {
-    return { success: false, message: '操作失败' };
-  }
-}
-
-/**
- * 审核酒店 - 拒绝（仅 admin）
- */
-export async function rejectHotel(hotelId: number, reason: string): Promise<ActionResponse> {
-  try {
-    const auth = await getAuthFromCookies();
-    if (!auth || auth.role !== 'admin') {
-      return { success: false, message: '无权操作' };
-    }
-
-    await prisma.hotel.update({
-      where: { id: hotelId },
-      data: { 
-        status: 2,
-        rejectReason: reason,
-      },
-    });
-    return { success: true, message: '已拒绝' };
-  } catch (error) {
-    return { success: false, message: '操作失败' };
-  }
-}
-
-// ---- 序列化工具 ----
-
-function serializeHotel(hotel: any) {
-  return {
-    ...hotel,
-    minPrice: Number(hotel.minPrice) || 0,
-    openingTime: hotel.openingTime ? hotel.openingTime.toISOString().split('T')[0] : null,
-    facilities: Array.isArray(hotel.facilities) ? hotel.facilities : [],
-    gallery: Array.isArray(hotel.gallery) ? hotel.gallery : [],
-    createdAt: hotel.createdAt?.toISOString ? hotel.createdAt.toISOString() : hotel.createdAt,
-    updatedAt: hotel.updatedAt?.toISOString ? hotel.updatedAt.toISOString() : hotel.updatedAt,
-  };
-}
-
-function serializeRoom(room: any) {
-  return {
-    ...room,
-    price: Number(room.price),
-    imageUrl: room.imageUrl || null,
-    createdAt: room.createdAt.toISOString(),
-    updatedAt: room.updatedAt.toISOString(),
-  };
-}

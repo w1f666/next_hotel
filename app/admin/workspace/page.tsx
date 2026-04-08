@@ -13,6 +13,7 @@ import {
 import { useRouter } from 'next/navigation';
 import type { Hotel } from '@/types';
 import { HOTEL_STATUS_MAP } from '@/types';
+import { getClientAuthHeaders } from '@/lib/client-auth';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -39,13 +40,17 @@ export default function WorkspacePage() {
     };
   }, [searchText]);
 
-  // 从登录态获取 merchantId
-  const merchantId = typeof window !== 'undefined' ? Number(localStorage.getItem('userId')) : 0;
-
   const fetchHotels = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/hotels?merchantId=${merchantId}`);
+      const res = await fetch('/api/merchant/hotels', {
+        headers: getClientAuthHeaders(),
+      });
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => null);
+        message.error(errJson?.message || '加载酒店列表失败');
+        return;
+      }
       const json = await res.json();
       if (json.success) {
         setHotels(json.data || []);
@@ -65,8 +70,13 @@ export default function WorkspacePage() {
     try {
       const res = await fetch(`/api/hotels/${id}`, {
         method: 'DELETE',
-        headers: { 'X-CSRF-Token': localStorage.getItem('csrfToken') || '' },
+        headers: getClientAuthHeaders(),
       });
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => null);
+        message.error(errJson?.message || '删除失败');
+        return;
+      }
       const json = await res.json();
       if (json.success) {
         message.success('已删除');

@@ -5,8 +5,7 @@ import { Table, Button, Tag, Space, Popconfirm, Input, Modal, App } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EnvironmentOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
 import type { Hotel } from '@prisma/client';
-import Link from 'next/link';
-import { deleteHotel, approveHotel, rejectHotel } from '@/lib/actions/hotel.actions';
+import { getClientAuthHeaders } from '@/lib/client-auth';
 
 // 1. 抽取独立的类型
 type HotelTableRow = Pick<Hotel, 'id' | 'name' | 'address' | 'starRating' | 'minPrice' | 'coverImage' | 'status' | 'rejectReason' | 'createdAt' | 'updatedAt'>;
@@ -28,12 +27,16 @@ export default function HotelTableClient({ initialData, onDeleted, onUpdated }: 
   const handleDelete = async (id: number) => {
     setLoadingId(id);
     try {
-      const result = await deleteHotel(id);
-      if (result) {
+      const res = await fetch(`/api/admin/hotels/${id}/review`, {
+        method: 'DELETE',
+        headers: getClientAuthHeaders(),
+      });
+      const json = await res.json();
+      if (res.ok && json.success) {
         message.success('删除成功');
         onDeleted?.();
       } else {
-        message.error('删除失败');
+        message.error(json.message || '删除失败');
       }
     } catch (error) {
       message.error('删除失败');
@@ -46,12 +49,20 @@ export default function HotelTableClient({ initialData, onDeleted, onUpdated }: 
   const handleApprove = async (id: number) => {
     setLoadingId(id);
     try {
-      const result = await approveHotel(id);
-      if (result.success) {
+      const res = await fetch(`/api/admin/hotels/${id}/review`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getClientAuthHeaders(),
+        },
+        body: JSON.stringify({ action: 'approve' }),
+      });
+      const json = await res.json();
+      if (res.ok && json.success) {
         message.success('审核通过');
         onUpdated?.();
       } else {
-        message.error(result.message || '操作失败');
+        message.error(json.message || '操作失败');
       }
     } catch (error) {
       message.error('操作失败');
@@ -77,13 +88,22 @@ export default function HotelTableClient({ initialData, onDeleted, onUpdated }: 
 
     setLoadingId(currentRejectId);
     try {
-      const result = await rejectHotel(currentRejectId, rejectReason);
-      if (result.success) {
+      const res = await fetch(`/api/admin/hotels/${currentRejectId}/review`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getClientAuthHeaders(),
+        },
+        body: JSON.stringify({ action: 'reject', reason: rejectReason.trim() }),
+      });
+      const json = await res.json();
+      if (res.ok && json.success) {
         message.success('已拒绝');
         setRejectModalVisible(false);
+        setRejectReason('');
         onUpdated?.();
       } else {
-        message.error(result.message || '操作失败');
+        message.error(json.message || '操作失败');
       }
     } catch (error) {
       message.error('操作失败');

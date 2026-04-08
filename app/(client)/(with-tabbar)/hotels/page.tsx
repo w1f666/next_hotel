@@ -39,6 +39,10 @@ export default function HotelSearchPage() {
         const fetchHotels = async () => {
             try {
                 const res = await fetch('/api/hotels?published=true');
+                if (!res.ok) {
+                    console.error('获取酒店列表失败');
+                    return;
+                }
                 const json = await res.json();
                 if (json.success && json.data) {
                     setHotels(json.data);

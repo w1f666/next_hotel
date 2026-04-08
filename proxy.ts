@@ -21,6 +21,17 @@ async function verifyTokenEdge(token: string): Promise<JwtPayload | null> {
     }
 }
 
+function hasClientIdentityMismatch(request: NextRequest, payload: JwtPayload): boolean {
+    const clientUserId = request.headers.get('x-client-user-id');
+    const clientUserRole = request.headers.get('x-client-user-role');
+
+    if (!clientUserId || !clientUserRole) {
+        return true;
+    }
+
+    return clientUserId !== String(payload.userId) || clientUserRole !== payload.role;
+}
+
 /**
  * 移动端设备用户代理关键词
  */
@@ -35,11 +46,13 @@ function isMobileRequest(userAgent: string): boolean {
     return MOBILE_USER_AGENTS.some((m) => lowerUA.includes(m.toLowerCase()));
 }
 
-/** 需要认证的 API 路由（写操作） */
+/** 需要认证的 API 路由 */
 const PROTECTED_API_PATTERNS = [
     { path: '/api/hotels', methods: ['POST'] },
     { path: '/api/hotels/', methods: ['PUT', 'DELETE'] }, // /api/hotels/:id
     { path: '/api/upload', methods: ['POST', 'PUT'] },
+    { path: '/api/admin/', methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'] }, // /api/admin/*
+    { path: '/api/merchant/', methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'] }, // /api/merchant/*
 ];
 
 /** 需要认证的页面路由 */
@@ -77,8 +90,12 @@ export async function proxy(request: NextRequest) {
             return NextResponse.json({ success: false, message: '登录已过期' }, { status: 401 });
         }
 
+        if (hasClientIdentityMismatch(request, payload)) {
+            return NextResponse.json({ success: false, message: '当前登录用户已变更，请刷新页面后重试' }, { status: 409 });
+        }
+
         // CSRF 校验：对比 cookie csrf_token 与请求头 X-CSRF-Token
-        if (CSRF_METHODS.includes(method)) {
+        if (isProtectedApi && CSRF_METHODS.includes(method)) {
             const cookieCsrf = request.cookies.get('csrf_token')?.value;
             const headerCsrf = request.headers.get('x-csrf-token');
             if (!cookieCsrf || !headerCsrf || cookieCsrf !== headerCsrf) {
@@ -115,5 +132,7 @@ export const config = {
         '/admin/:path*',
         '/api/hotels/:path*',
         '/api/upload/:path*',
+        '/api/admin/:path*',
+        '/api/merchant/:path*',
     ],
 };

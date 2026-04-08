@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation';
 import HotelForm from '../../_components/HotelForm';
 import type { HotelFormData, HotelWithRooms } from '@/types';
 import { HOTEL_STATUS_MAP } from '@/types';
+import { getClientAuthHeaders } from '@/lib/client-auth';
 
 const { Title, Paragraph } = Typography;
 
@@ -27,6 +28,11 @@ export default function EditHotelPage({ params }: { params: Promise<{ id: string
     const fetchHotel = async () => {
       try {
         const res = await fetch(`/api/hotels/${id}`);
+        if (!res.ok) {
+          const errJson = await res.json().catch(() => null);
+          setError(errJson?.message || '加载失败');
+          return;
+        }
         const json = await res.json();
         if (json.success && json.data) {
           setHotel(json.data);
@@ -45,12 +51,11 @@ export default function EditHotelPage({ params }: { params: Promise<{ id: string
   const handleSubmit = async (formData: HotelFormData) => {
     setSubmitting(true);
     try {
-      const csrfToken = localStorage.getItem('csrfToken') || '';
       const res = await fetch(`/api/hotels/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'X-CSRF-Token': csrfToken,
+          ...getClientAuthHeaders(),
         },
         body: JSON.stringify(formData),
       });

@@ -16,6 +16,7 @@ import {
   STAR_RATING_OPTIONS, FACILITY_OPTIONS, CANCEL_POLICY_OPTIONS,
 } from '@/types';
 import type { HotelFormData, HotelRoom, HotelWithRooms } from '@/types';
+import { getClientAuthHeaders } from '@/lib/client-auth';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -70,9 +71,14 @@ const HotelForm: React.FC<HotelFormProps> = ({ initialData, onSubmit, loading, m
     try {
       const res = await fetch('/api/upload', {
         method: 'POST',
-        headers: { 'X-CSRF-Token': localStorage.getItem('csrfToken') || '' },
+        headers: getClientAuthHeaders(),
         body: formData,
       });
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => null);
+        message.error(errJson?.message || '上传失败');
+        return false;
+      }
       const json = await res.json();
       
       if (json.success) {
@@ -110,9 +116,14 @@ const HotelForm: React.FC<HotelFormProps> = ({ initialData, onSubmit, loading, m
     try {
       const res = await fetch('/api/upload', {
         method: 'POST',
-        headers: { 'X-CSRF-Token': localStorage.getItem('csrfToken') || '' },
+        headers: getClientAuthHeaders(),
         body: formData,
       });
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => null);
+        message.error(errJson?.message || '上传失败');
+        return false;
+      }
       const json = await res.json();
       
       if (json.success) {
@@ -147,9 +158,14 @@ const HotelForm: React.FC<HotelFormProps> = ({ initialData, onSubmit, loading, m
     try {
       const res = await fetch('/api/upload', {
         method: 'PUT',
-        headers: { 'X-CSRF-Token': localStorage.getItem('csrfToken') || '' },
+        headers: getClientAuthHeaders(),
         body: formData,
       });
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => null);
+        message.error(errJson?.message || '上传失败');
+        return;
+      }
       const json = await res.json();
       
       if (json.success && json.data) {

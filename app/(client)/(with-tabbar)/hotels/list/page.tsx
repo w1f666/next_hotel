@@ -342,6 +342,10 @@ function HotelListContent() {
       }
       
       const res = await fetch(`/api/hotels?${params.toString()}`);
+      if (!res.ok) {
+        console.error('获取酒店列表失败');
+        return;
+      }
       const json = await res.json();
       
       if (json.success && json.data) {

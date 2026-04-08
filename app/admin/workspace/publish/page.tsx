@@ -6,6 +6,7 @@ import { ArrowLeftOutlined, HomeOutlined, EditOutlined } from '@ant-design/icons
 import { useRouter } from 'next/navigation';
 import HotelForm from '../_components/HotelForm';
 import type { HotelFormData } from '@/types';
+import { getClientAuthHeaders } from '@/lib/client-auth';
 
 const { Title, Paragraph } = Typography;
 
@@ -13,11 +14,9 @@ export default function PublishHotelPage() {
   const router = useRouter();
   const { message } = App.useApp();
   const [loading, setLoading] = useState(false);
-  const [merchantId, setMerchantId] = useState<number | null>(null);
   const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    // 从登录态获取 merchantId
     const userId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
     
     if (!userId) {
@@ -34,19 +33,17 @@ export default function PublishHotelPage() {
       return;
     }
     
-    setMerchantId(id);
     setIsChecking(false);
   }, [router, message]);
 
   const handleSubmit = async (formData: HotelFormData) => {
     setLoading(true);
     try {
-      const csrfToken = localStorage.getItem('csrfToken') || '';
       const res = await fetch('/api/hotels', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-CSRF-Token': csrfToken,
+          ...getClientAuthHeaders(),
         },
         body: JSON.stringify(formData),
       });

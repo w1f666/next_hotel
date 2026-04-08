@@ -3,8 +3,8 @@
 'use client';
 
 // app/admin/hotels/page.tsx
-import React, { useState, useCallback } from 'react';
-import { getAdminHotels } from '@/lib/actions/hotel.actions';
+import { useEffect, useState, useCallback } from 'react';
+import { getClientAuthHeaders } from '@/lib/client-auth';
 import HotelTableClient from '@/app/admin/hotels/_components/HotelTableClient'; 
 
 // 与 HotelTableClient 中的类型保持一致
@@ -27,13 +27,27 @@ export default function AdminHotelsPage() {
 
   // 刷新数据
   const refreshData = useCallback(async () => {
-    const res = await getAdminHotels();
-    setHotels(res.data?.hotels || []);
+    try {
+      const res = await fetch('/api/admin/hotels', {
+        headers: getClientAuthHeaders(),
+      });
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => null);
+        console.error('获取酒店列表失败:', errJson?.message);
+        return;
+      }
+      const json = await res.json();
+      if (json.success) {
+        setHotels(json.data?.hotels || []);
+      }
+    } catch {
+      setHotels([]);
+    }
     setRefreshKey(prev => prev + 1);
   }, []);
 
   // 初始加载数据
-  React.useEffect(() => {
+  useEffect(() => {
     refreshData();
   }, [refreshData]);
 
