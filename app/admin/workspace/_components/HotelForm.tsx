@@ -16,7 +16,7 @@ import {
   STAR_RATING_OPTIONS, FACILITY_OPTIONS, CANCEL_POLICY_OPTIONS,
 } from '@/types';
 import type { HotelFormData, HotelRoom, HotelWithRooms } from '@/types';
-import { getClientAuthHeaders } from '@/lib/client-auth';
+import { uploadSingleFile, uploadMultipleFiles } from '@/lib/upload';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -64,32 +64,14 @@ const HotelForm: React.FC<HotelFormProps> = ({ initialData, onSubmit, loading, m
 
   // 处理房型图片上传
   const handleRoomImageUpload = async (file: File, roomIndex: number) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    
     setUploading(true);
     try {
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        headers: getClientAuthHeaders(),
-        body: formData,
-      });
-      if (!res.ok) {
-        const errJson = await res.json().catch(() => null);
-        message.error(errJson?.message || '上传失败');
-        return false;
-      }
-      const json = await res.json();
-      
-      if (json.success) {
-        const url = json.data.url;
-        setRoomImageUrls(prev => ({
-          ...prev,
-          [roomIndex]: url
-        }));
+      const result = await uploadSingleFile(file);
+      if (result.success && result.url) {
+        setRoomImageUrls(prev => ({ ...prev, [roomIndex]: result.url! }));
         message.success('房型图片上传成功');
       } else {
-        message.error(json.message || '上传失败');
+        message.error(result.message || '上传失败');
       }
     } catch (error) {
       message.error('上传失败，请稍后重试');
@@ -109,74 +91,38 @@ const HotelForm: React.FC<HotelFormProps> = ({ initialData, onSubmit, loading, m
 
   // 处理封面上传
   const handleCoverUpload = async (file: File) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    
     setUploading(true);
     try {
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        headers: getClientAuthHeaders(),
-        body: formData,
-      });
-      if (!res.ok) {
-        const errJson = await res.json().catch(() => null);
-        message.error(errJson?.message || '上传失败');
-        return false;
-      }
-      const json = await res.json();
-      
-      if (json.success) {
-        const url = json.data.url;
-        setCoverImageUrl(url);
-        form.setFieldsValue({ coverImage: url });
+      const result = await uploadSingleFile(file);
+      if (result.success && result.url) {
+        setCoverImageUrl(result.url);
+        form.setFieldsValue({ coverImage: result.url });
         message.success('封面上传成功');
       } else {
-        message.error(json.message || '上传失败');
+        message.error(result.message || '上传失败');
       }
     } catch (error) {
       message.error('上传失败，请稍后重试');
     } finally {
       setUploading(false);
     }
-    return false; // 阻止默认上传行为
+    return false;
   };
 
   // 处理相册上传 - 支持多文件同时上传
   const handleGalleryUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     
-    const fileArray = Array.from(files);
-    const formData = new FormData();
-    
-    // 添加所有文件到 FormData
-    fileArray.forEach((file) => {
-      formData.append('files', file);
-    });
-    
     setUploading(true);
     try {
-      const res = await fetch('/api/upload', {
-        method: 'PUT',
-        headers: getClientAuthHeaders(),
-        body: formData,
-      });
-      if (!res.ok) {
-        const errJson = await res.json().catch(() => null);
-        message.error(errJson?.message || '上传失败');
-        return;
-      }
-      const json = await res.json();
-      
-      if (json.success && json.data) {
-        // 批量上传成功，获取所有返回的URL
-        const uploadedUrls = json.data.map((item: any) => item.url);
-        const newGalleryUrls = [...galleryUrls, ...uploadedUrls];
+      const result = await uploadMultipleFiles(Array.from(files));
+      if (result.success && result.urls) {
+        const newGalleryUrls = [...galleryUrls, ...result.urls];
         setGalleryUrls(newGalleryUrls);
         form.setFieldsValue({ gallery: newGalleryUrls.join('\n') });
-        message.success(`成功上传 ${uploadedUrls.length} 张图片`);
+        message.success(`成功上传 ${result.urls.length} 张图片`);
       } else {
-        message.error(json.message || '上传失败');
+        message.error(result.message || '上传失败');
       }
     } catch (error) {
       message.error('上传失败，请稍后重试');

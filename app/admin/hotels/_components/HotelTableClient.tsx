@@ -4,11 +4,9 @@ import React, { useState } from 'react';
 import { Table, Button, Tag, Space, Popconfirm, Input, Modal, App } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EnvironmentOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
-import type { Hotel } from '@prisma/client';
-import { getClientAuthHeaders } from '@/lib/client-auth';
-
-// 1. 抽取独立的类型
-type HotelTableRow = Pick<Hotel, 'id' | 'name' | 'address' | 'starRating' | 'minPrice' | 'coverImage' | 'status' | 'rejectReason' | 'createdAt' | 'updatedAt'>;
+import type { HotelTableRow } from '@/types';
+import { HOTEL_STATUS_MAP } from '@/types';
+import { fetchApi } from '@/lib/fetch-api';
 
 interface Props {
   initialData: HotelTableRow[];
@@ -27,16 +25,12 @@ export default function HotelTableClient({ initialData, onDeleted, onUpdated }: 
   const handleDelete = async (id: number) => {
     setLoadingId(id);
     try {
-      const res = await fetch(`/api/admin/hotels/${id}/review`, {
-        method: 'DELETE',
-        headers: getClientAuthHeaders(),
-      });
-      const json = await res.json();
-      if (res.ok && json.success) {
+      const result = await fetchApi(`/api/admin/hotels/${id}/review`, { method: 'DELETE' });
+      if (result.ok) {
         message.success('删除成功');
         onDeleted?.();
       } else {
-        message.error(json.message || '删除失败');
+        message.error(result.message || '删除失败');
       }
     } catch (error) {
       message.error('删除失败');
@@ -49,20 +43,15 @@ export default function HotelTableClient({ initialData, onDeleted, onUpdated }: 
   const handleApprove = async (id: number) => {
     setLoadingId(id);
     try {
-      const res = await fetch(`/api/admin/hotels/${id}/review`, {
+      const result = await fetchApi(`/api/admin/hotels/${id}/review`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          ...getClientAuthHeaders(),
-        },
         body: JSON.stringify({ action: 'approve' }),
       });
-      const json = await res.json();
-      if (res.ok && json.success) {
+      if (result.ok) {
         message.success('审核通过');
         onUpdated?.();
       } else {
-        message.error(json.message || '操作失败');
+        message.error(result.message || '操作失败');
       }
     } catch (error) {
       message.error('操作失败');
@@ -88,22 +77,17 @@ export default function HotelTableClient({ initialData, onDeleted, onUpdated }: 
 
     setLoadingId(currentRejectId);
     try {
-      const res = await fetch(`/api/admin/hotels/${currentRejectId}/review`, {
+      const result = await fetchApi(`/api/admin/hotels/${currentRejectId}/review`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          ...getClientAuthHeaders(),
-        },
         body: JSON.stringify({ action: 'reject', reason: rejectReason.trim() }),
       });
-      const json = await res.json();
-      if (res.ok && json.success) {
+      if (result.ok) {
         message.success('已拒绝');
         setRejectModalVisible(false);
         setRejectReason('');
         onUpdated?.();
       } else {
-        message.error(json.message || '操作失败');
+        message.error(result.message || '操作失败');
       }
     } catch (error) {
       message.error('操作失败');
@@ -142,15 +126,10 @@ export default function HotelTableClient({ initialData, onDeleted, onUpdated }: 
       dataIndex: 'status',
       key: 'status',
       render: (status: number, record: HotelTableRow) => {
-        const statusMap: Record<number, { text: string; color: string }> = {
-          0: { text: '待审核', color: 'orange' },
-          1: { text: '已通过', color: 'green' },
-          2: { text: '未通过', color: 'red' },
-        };
-        const info = statusMap[status] || { text: '未知', color: 'default' };
+        const info = HOTEL_STATUS_MAP[status] || { label: '未知', color: 'default' };
         return (
           <Tag color={info.color}>
-            {info.text}
+            {info.label}
           </Tag>
         );
       },

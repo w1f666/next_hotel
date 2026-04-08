@@ -13,7 +13,7 @@ import {
 import { useRouter } from 'next/navigation';
 import type { Hotel } from '@/types';
 import { HOTEL_STATUS_MAP } from '@/types';
-import { getClientAuthHeaders } from '@/lib/client-auth';
+import { fetchApi } from '@/lib/fetch-api';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -43,17 +43,11 @@ export default function WorkspacePage() {
   const fetchHotels = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/merchant/hotels', {
-        headers: getClientAuthHeaders(),
-      });
-      if (!res.ok) {
-        const errJson = await res.json().catch(() => null);
-        message.error(errJson?.message || '加载酒店列表失败');
-        return;
-      }
-      const json = await res.json();
-      if (json.success) {
-        setHotels(json.data || []);
+      const result = await fetchApi('/api/merchant/hotels');
+      if (result.ok) {
+        setHotels(result.data || []);
+      } else {
+        message.error(result.message || '加载酒店列表失败');
       }
     } catch (err) {
       message.error('加载酒店列表失败');
@@ -68,21 +62,12 @@ export default function WorkspacePage() {
 
   const handleDelete = async (id: number) => {
     try {
-      const res = await fetch(`/api/hotels/${id}`, {
-        method: 'DELETE',
-        headers: getClientAuthHeaders(),
-      });
-      if (!res.ok) {
-        const errJson = await res.json().catch(() => null);
-        message.error(errJson?.message || '删除失败');
-        return;
-      }
-      const json = await res.json();
-      if (json.success) {
+      const result = await fetchApi(`/api/hotels/${id}`, { method: 'DELETE' });
+      if (result.ok) {
         message.success('已删除');
         fetchHotels();
       } else {
-        message.error(json.message);
+        message.error(result.message || '删除失败');
       }
     } catch {
       message.error('删除失败');

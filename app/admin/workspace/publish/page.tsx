@@ -6,7 +6,7 @@ import { ArrowLeftOutlined, HomeOutlined, EditOutlined } from '@ant-design/icons
 import { useRouter } from 'next/navigation';
 import HotelForm from '../_components/HotelForm';
 import type { HotelFormData } from '@/types';
-import { getClientAuthHeaders } from '@/lib/client-auth';
+import { fetchApi } from '@/lib/fetch-api';
 
 const { Title, Paragraph } = Typography;
 
@@ -39,18 +39,13 @@ export default function PublishHotelPage() {
   const handleSubmit = async (formData: HotelFormData) => {
     setLoading(true);
     try {
-      const res = await fetch('/api/hotels', {
+      const result = await fetchApi('/api/hotels', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...getClientAuthHeaders(),
-        },
         body: JSON.stringify(formData),
       });
-      const json = await res.json();
 
-      if (!res.ok || !json.success) {
-        message.error(json.message || '提交失败');
+      if (!result.ok) {
+        message.error(result.message || '提交失败');
         return;
       }
 

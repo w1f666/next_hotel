@@ -4,22 +4,9 @@
 
 // app/admin/hotels/page.tsx
 import { useEffect, useState, useCallback } from 'react';
-import { getClientAuthHeaders } from '@/lib/client-auth';
+import { fetchApi } from '@/lib/fetch-api';
 import HotelTableClient from '@/app/admin/hotels/_components/HotelTableClient'; 
-
-// 与 HotelTableClient 中的类型保持一致
-type HotelTableRow = {
-  id: number;
-  name: string;
-  address: string;
-  starRating: number;
-  minPrice: any;
-  coverImage: string | null;
-  status: number;
-  rejectReason: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-};
+import type { HotelTableRow } from '@/types';
 
 export default function AdminHotelsPage() {
   const [hotels, setHotels] = useState<HotelTableRow[]>([]);
@@ -27,21 +14,9 @@ export default function AdminHotelsPage() {
 
   // 刷新数据
   const refreshData = useCallback(async () => {
-    try {
-      const res = await fetch('/api/admin/hotels', {
-        headers: getClientAuthHeaders(),
-      });
-      if (!res.ok) {
-        const errJson = await res.json().catch(() => null);
-        console.error('获取酒店列表失败:', errJson?.message);
-        return;
-      }
-      const json = await res.json();
-      if (json.success) {
-        setHotels(json.data?.hotels || []);
-      }
-    } catch {
-      setHotels([]);
+    const result = await fetchApi('/api/admin/hotels');
+    if (result.ok) {
+      setHotels(result.data?.hotels || []);
     }
     setRefreshKey(prev => prev + 1);
   }, []);

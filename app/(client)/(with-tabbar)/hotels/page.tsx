@@ -8,25 +8,17 @@ import 'dayjs/locale/zh-cn';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import type { HotelListItem } from '@/types';
 
 dayjs.locale('zh-cn');
 
 const { RangePicker } = DatePicker;
 const { Text, Title } = Typography;
 
-interface HotelItem {
-    id: number;
-    name: string;
-    address: string;
-    starRating: number;
-    minPrice: number;
-    coverImage: string | null;
-}
-
 export default function HotelSearchPage() {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState('domestic');
-    const [hotels, setHotels] = useState<HotelItem[]>([]);
+    const [hotels, setHotels] = useState<HotelListItem[]>([]);
     const [loading, setLoading] = useState(true);
 
     // 搜索参数

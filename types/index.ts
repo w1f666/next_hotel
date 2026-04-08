@@ -77,3 +77,20 @@ export const CANCEL_POLICY_OPTIONS = [
   '入住前3天免费取消',
   '不可取消',
 ];
+
+// C端酒店列表项（列表页/首页展示用）
+export interface HotelListItem {
+  id: number;
+  name: string;
+  address: string;
+  starRating: number;
+  minPrice: number;
+  coverImage: string | null;
+  facilities: string[];
+  createdAt?: string;
+}
+
+// 管理端酒店表格行
+export type HotelTableRow = Pick<Hotel,
+  'id' | 'name' | 'address' | 'starRating' | 'minPrice' | 'coverImage' | 'status' | 'rejectReason' | 'createdAt' | 'updatedAt'
+>;

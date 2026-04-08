@@ -11,7 +11,7 @@ import { useRouter } from 'next/navigation';
 import HotelForm from '../../_components/HotelForm';
 import type { HotelFormData, HotelWithRooms } from '@/types';
 import { HOTEL_STATUS_MAP } from '@/types';
-import { getClientAuthHeaders } from '@/lib/client-auth';
+import { fetchApi } from '@/lib/fetch-api';
 
 const { Title, Paragraph } = Typography;
 
@@ -27,17 +27,11 @@ export default function EditHotelPage({ params }: { params: Promise<{ id: string
   useEffect(() => {
     const fetchHotel = async () => {
       try {
-        const res = await fetch(`/api/hotels/${id}`);
-        if (!res.ok) {
-          const errJson = await res.json().catch(() => null);
-          setError(errJson?.message || '加载失败');
-          return;
-        }
-        const json = await res.json();
-        if (json.success && json.data) {
-          setHotel(json.data);
+        const result = await fetchApi(`/api/hotels/${id}`, { auth: false });
+        if (result.ok && result.data) {
+          setHotel(result.data);
         } else {
-          setError(json.message || '酒店不存在');
+          setError(result.message || '酒店不存在');
         }
       } catch {
         setError('加载失败，请稍后重试');
@@ -51,18 +45,13 @@ export default function EditHotelPage({ params }: { params: Promise<{ id: string
   const handleSubmit = async (formData: HotelFormData) => {
     setSubmitting(true);
     try {
-      const res = await fetch(`/api/hotels/${id}`, {
+      const result = await fetchApi(`/api/hotels/${id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          ...getClientAuthHeaders(),
-        },
         body: JSON.stringify(formData),
       });
-      const json = await res.json();
 
-      if (!res.ok || !json.success) {
-        message.error(json.message || '保存失败');
+      if (!result.ok) {
+        message.error(result.message || '保存失败');
         return;
       }
 

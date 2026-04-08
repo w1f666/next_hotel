@@ -1,40 +1,22 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef, memo, Suspense } from 'react';
+import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { 
-  App, Button, Spin, Empty, Modal, InputNumber 
+  App, Spin, Empty
 } from 'antd';
 import { 
   EnvironmentOutlined, SearchOutlined, 
-  StarFilled, FilterOutlined, CloseOutlined, 
-  CalendarOutlined, FireFilled, SafetyCertificateFilled
+  FilterOutlined, CloseOutlined, 
+  CalendarOutlined, FireFilled
 } from '@ant-design/icons';
 import dayjs, { Dayjs } from 'dayjs';
 import 'dayjs/locale/zh-cn';
-import Image from 'next/image';
-import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
+import type { HotelListItem } from '@/types';
+import HotelCard from '../components/HotelCard';
+import FilterModal, { PRICE_RANGES } from '../components/FilterModal';
 
 dayjs.locale('zh-cn');
-
-// ==================== 类型定义 ====================
-interface HotelItem {
-  id: number;
-  name: string;
-  address: string;
-  starRating: number;
-  minPrice: number;
-  coverImage: string | null;
-  facilities: string[];
-  createdAt?: string;
-}
-
-// ==================== 游标分页响应类型 ====================
-interface CursorPageResponse {
-  data: HotelItem[];
-  nextCursor: number | null;
-  hasMore: boolean;
-}
 
 // ==================== 常量数据 ====================
 const CITIES = [
@@ -47,147 +29,6 @@ const CITIES = [
   { value: 'shenzhen', label: '深圳' },
 ];
 
-const STAR_OPTIONS = [
-  { label: '⭐⭐ 经济型', value: 2 },
-  { label: '⭐⭐⭐ 舒适型', value: 3 },
-  { label: '⭐⭐⭐⭐ 高档型', value: 4 },
-  { label: '⭐⭐⭐⭐⭐ 豪华型', value: 5 },
-];
-
-const FACILITY_OPTIONS = [
-  '免费WiFi', '免费停车', '健身房', '游泳池', '餐厅',
-  '会议室', '行政酒廊', '洗衣服务', '礼宾服务', '机器人服务',
-  '空调', '电梯', '无烟楼层', 'SPA', '商务中心',
-];
-
-const PRICE_RANGES = [
-  { label: '不限', value: 'all' },
-  { label: '¥300以下', value: '0-300' },
-  { label: '¥300-600', value: '300-600' },
-  { label: '¥600以上', value: '600+' },
-];
-
-// ==================== 使用 React.memo 优化的酒店卡片组件 ====================
-/*该interface作用：
-组件定义时写(hotel: HotelItem)意味着将传入的Prop变为hotel，
-然后父组件传入时写<HotelCard hotel={myHotel} />
-意味着将hotel塞到Prop中 */
-interface HotelCardProps {
-  hotel: HotelItem;
-}
-
-const HotelCard = memo(function HotelCard({ hotel }: HotelCardProps) {
-  // 星级对应标签和配色 — 高级哑光风格
-  const starConfig = hotel.starRating >= 5
-    ? { label: '奢华', scoreColor: 'text-amber-700', badge: 'bg-gradient-to-r from-amber-800/75 to-amber-600/75' }
-    : hotel.starRating >= 4
-    ? { label: '高档', scoreColor: 'text-[#2d2d3a]', badge: 'bg-[#1a1a2e]/70' }
-    : hotel.starRating >= 3
-    ? { label: '舒适', scoreColor: 'text-stone-600', badge: 'bg-stone-700/65' }
-    : { label: '经济', scoreColor: 'text-gray-500', badge: 'bg-gray-600/60' };
-
-  // 模拟评分
-  const score = (hotel.starRating * 0.8 + 1.2).toFixed(1);
-
-  return (
-    <Link href={`/hotels/${hotel.id}`} prefetch={false}>
-      <div className="mb-3.5 bg-white rounded-2xl overflow-hidden shadow-[0_1px_10px_rgba(0,0,0,0.05)] active:shadow-[0_1px_4px_rgba(0,0,0,0.08)] active:scale-[0.988] transition-all duration-200">
-        {/* 上方大图区域 */}
-        <div className="relative w-full h-[180px] overflow-hidden">
-          <Image
-            src={hotel.coverImage || '/hotel_img/hotel1.png'}
-            alt={hotel.name}
-            fill
-            sizes="(max-width: 768px) 100vw, 400px"
-            className="object-cover"
-            loading="lazy"
-            placeholder="blur"
-            blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
-          />
-          {/* 暗色渐变遮罩 */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-
-          {/* 左上星级标签 */}
-          <div className={`absolute top-3 left-3 ${starConfig.badge} backdrop-blur-md text-white text-[11px] font-semibold px-2.5 py-1 rounded-lg flex items-center gap-1`}>
-            <StarFilled className="text-[10px]" />
-            {starConfig.label}
-          </div>
-
-          {/* 右上评分 */}
-          <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-md rounded-lg px-2 py-1 flex items-center gap-1 shadow-sm">
-            <span className={`text-sm font-black ${starConfig.scoreColor}`}>
-              {score}
-            </span>
-            <span className="text-[9px] text-gray-400 font-medium">分</span>
-          </div>
-
-          {/* 底部图上酒店名 */}
-          <div className="absolute bottom-0 left-0 right-0 px-4 pb-3">
-            <h3 className="font-bold text-[17px] text-white leading-tight line-clamp-1 drop-shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
-              {hotel.name}
-            </h3>
-          </div>
-        </div>
-
-        {/* 下方信息区域 */}
-        <div className="px-4 py-3">
-          {/* 地址 + 星级 */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1 flex-1 min-w-0">
-              <EnvironmentOutlined className="text-gray-400 text-[11px] flex-shrink-0" />
-              <span className="text-[12px] text-gray-500 truncate">
-                {hotel.address}
-              </span>
-            </div>
-            <div className="flex items-center gap-0.5 ml-2 flex-shrink-0">
-              {Array.from({ length: hotel.starRating }, (_, i) => (
-                <StarFilled key={i} className="text-amber-400 text-[9px]" />
-              ))}
-            </div>
-          </div>
-
-          {/* 设施标签 */}
-          {hotel.facilities && hotel.facilities.length > 0 && (
-            <div className="flex items-center gap-1.5 mt-2.5 overflow-hidden">
-              {hotel.facilities.slice(0, 4).map((facility, idx) => (
-                <span
-                  key={idx}
-                  className="text-[10px] text-gray-500 bg-gray-50/80 py-0.5 px-2 rounded whitespace-nowrap"
-                >
-                  {facility}
-                </span>
-              ))}
-              {hotel.facilities.length > 4 && (
-                <span className="text-[10px] text-gray-400 whitespace-nowrap">
-                  +{hotel.facilities.length - 4}
-                </span>
-              )}
-            </div>
-          )}
-
-          {/* 分割线 + 价格行 */}
-          <div className="flex items-end justify-between mt-3 pt-2.5 border-t border-gray-100/80">
-            <div className="flex items-center gap-1.5">
-              <SafetyCertificateFilled className="text-emerald-500 text-[11px]" />
-              <span className="text-[11px] text-emerald-600 font-medium">免费取消</span>
-            </div>
-            <div className="flex items-baseline">
-              <span className="text-[11px] text-gray-400 mr-0.5">¥</span>
-              <span className="text-[22px] font-black text-gray-900 leading-none tracking-tighter">
-                {hotel.minPrice}
-              </span>
-              <span className="text-[10px] text-gray-400 ml-0.5">/晚起</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </Link>
-  );
-});
-
-// 添加 displayName 以便 React DevTools 识别
-HotelCard.displayName = 'HotelCard';
-
 // ==================== 主页面组件 ====================
 function HotelListContent() {
   const searchParams = useSearchParams();
@@ -197,7 +38,7 @@ function HotelListContent() {
   const observerRef = useRef<IntersectionObserver | null>(null);
   
   // 状态管理 - 游标分页
-  const [hotels, setHotels] = useState<HotelItem[]>([]);
+  const [hotels, setHotels] = useState<HotelListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -228,13 +69,6 @@ function HotelListContent() {
     }
     const [min, max] = priceParam.split('-').map(Number);
     return [min, max];
-  };
-  
-  // 获取价格筛选的显示值
-  const getPriceSelectValue = (): string => {
-    if (!priceRange) return 'all';
-    if (priceRange[1] >= 99999) return '600+';
-    return `${priceRange[0]}-${priceRange[1]}`;
   };
   
   const [priceRange, setPriceRange] = useState<[number, number] | null>(getInitialPriceRange);
@@ -349,7 +183,7 @@ function HotelListContent() {
       const json = await res.json();
       
       if (json.success && json.data) {
-        const newHotels: HotelItem[] = json.data.map((h: any) => ({
+        const newHotels: HotelListItem[] = json.data.map((h: any) => ({
           id: h.id,
           name: h.name,
           address: h.address,
@@ -469,241 +303,22 @@ function HotelListContent() {
     return count;
   };
 
-  // ===== 弹窗临时状态 =====
-  // 打开弹窗时从主状态复制，关闭/确认时再写回主状态
-  const [tempPriceRange, setTempPriceRange] = useState<[number, number] | null>(null);
-  const [tempStars, setTempStars] = useState<number[]>([]);
-  const [tempFacilities, setTempFacilities] = useState<string[]>([]);
-  const [tempCustomMin, setTempCustomMin] = useState<number | undefined>(undefined);
-  const [tempCustomMax, setTempCustomMax] = useState<number | undefined>(undefined);
-
-  // 打开弹窗时同步临时状态
+  // 打开筛选弹窗
   const openFilterModal = () => {
-    setTempPriceRange(priceRange);
-    setTempStars([...selectedStars]);
-    setTempFacilities([...selectedFacilities]);
-    // 同步自定义价格输入
-    if (priceRange) {
-      setTempCustomMin(priceRange[0] || undefined);
-      setTempCustomMax(priceRange[1] >= 99999 ? undefined : priceRange[1]);
-    } else {
-      setTempCustomMin(undefined);
-      setTempCustomMax(undefined);
-    }
     setFilterVisible(true);
   };
 
-  // 获取临时价格的显示值
-  const getTempPriceSelectValue = (): string => {
-    if (!tempPriceRange) return 'all';
-    if (tempPriceRange[1] >= 99999) return '600+';
-    return `${tempPriceRange[0]}-${tempPriceRange[1]}`;
+  // 筛选确认回调
+  const handleFilterConfirm = (filters: {
+    priceRange: [number, number] | null;
+    selectedStars: number[];
+    selectedFacilities: string[];
+  }) => {
+    setPriceRange(filters.priceRange);
+    setSelectedStars(filters.selectedStars);
+    setSelectedFacilities(filters.selectedFacilities);
+    setFilterVisible(false);
   };
-
-  // 临时筛选数量
-  const getTempFilterCount = () => {
-    let count = 0;
-    if (tempPriceRange) count++;
-    if (tempStars.length > 0) count++;
-    if (tempFacilities.length > 0) count++;
-    return count;
-  };
-
-  // 渲染筛选弹窗 — 使用临时状态，确认后才写回主状态触发请求
-  const renderFilterModal = () => (
-    <Modal
-      open={filterVisible}
-      title={null}
-      footer={null}
-      onCancel={() => setFilterVisible(false)}
-      className="filter-modal"
-      centered
-      closable={false}
-      styles={{ body: { padding: 0 } }}
-    >
-      {/* 自定义头部 */}
-      <div className="flex items-center justify-between px-5 pt-5 pb-3">
-        <h3 className="text-lg font-bold text-gray-900">筛选条件</h3>
-        <button 
-          onClick={() => {
-            setTempPriceRange(null);
-            setTempStars([]);
-            setTempFacilities([]);
-            setTempCustomMin(undefined);
-            setTempCustomMax(undefined);
-          }}
-          className="text-sm text-gray-400 active:text-gray-600"
-        >
-          重置
-        </button>
-      </div>
-
-      <div className="px-5 pb-4 space-y-5 max-h-[60vh] overflow-y-auto">
-        {/* 价格筛选 */}
-        <div>
-          <div className="text-sm font-semibold text-gray-800 mb-2.5">💰 价格区间</div>
-          <div className="flex flex-wrap gap-2">
-            {PRICE_RANGES.map((range) => {
-              const isActive = getTempPriceSelectValue() === range.value;
-              return (
-                <div
-                  key={range.value}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium cursor-pointer transition-all ${
-                    isActive
-                      ? 'bg-[#1a1a2e] text-white'
-                      : 'bg-gray-100 text-gray-600 active:bg-gray-200'
-                  }`}
-                  onClick={() => {
-                    if (range.value === 'all') {
-                      setTempPriceRange(null);
-                      setTempCustomMin(undefined);
-                      setTempCustomMax(undefined);
-                    } else if (range.value === '600+') {
-                      setTempPriceRange([600, 99999]);
-                      setTempCustomMin(600);
-                      setTempCustomMax(undefined);
-                    } else {
-                      const [min, max] = range.value.split('-').map(Number);
-                      setTempPriceRange([min, max]);
-                      setTempCustomMin(min);
-                      setTempCustomMax(max);
-                    }
-                  }}
-                >
-                  {range.label}
-                </div>
-              );
-            })}
-          </div>
-          {/* 自定义价格输入 */}
-          <div className="flex items-center gap-2 mt-3">
-            <InputNumber
-              min={0}
-              max={99999}
-              placeholder="最低价"
-              value={tempCustomMin}
-              onChange={(v) => {
-                setTempCustomMin(v ?? undefined);
-                const min = v ?? 0;
-                const max = tempCustomMax ?? 99999;
-                if (min === 0 && max === 99999) {
-                  setTempPriceRange(null);
-                } else {
-                  setTempPriceRange([min, max]);
-                }
-              }}
-              className="flex-1"
-              prefix="¥"
-              size="small"
-            />
-            <span className="text-gray-400 text-xs">—</span>
-            <InputNumber
-              min={0}
-              max={99999}
-              placeholder="最高价"
-              value={tempCustomMax}
-              onChange={(v) => {
-                setTempCustomMax(v ?? undefined);
-                const min = tempCustomMin ?? 0;
-                const max = v ?? 99999;
-                if (min === 0 && max === 99999) {
-                  setTempPriceRange(null);
-                } else {
-                  setTempPriceRange([min, max]);
-                }
-              }}
-              className="flex-1"
-              prefix="¥"
-              size="small"
-            />
-          </div>
-        </div>
-
-        {/* 星级筛选 */}
-        <div>
-          <div className="text-sm font-semibold text-gray-800 mb-2.5">⭐ 酒店星级</div>
-          <div className="flex flex-wrap gap-2">
-            {STAR_OPTIONS.map((star) => {
-              const isActive = tempStars.includes(star.value);
-              return (
-                <div
-                  key={star.value}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium cursor-pointer transition-all ${
-                    isActive
-                      ? 'bg-amber-600 text-white'
-                      : 'bg-gray-100 text-gray-600 active:bg-gray-200'
-                  }`}
-                  onClick={() => {
-                    setTempStars(prev => 
-                      prev.includes(star.value) 
-                        ? prev.filter(s => s !== star.value) 
-                        : [...prev, star.value]
-                    );
-                  }}
-                >
-                  {star.label}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* 设施筛选 */}
-        <div>
-          <div className="text-sm font-semibold text-gray-800 mb-2.5">🏨 配套设施</div>
-          <div className="flex flex-wrap gap-2">
-            {FACILITY_OPTIONS.map((facility) => {
-              const isActive = tempFacilities.includes(facility);
-              return (
-                <div
-                  key={facility}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium cursor-pointer transition-all ${
-                    isActive
-                      ? 'bg-stone-700 text-white'
-                      : 'bg-gray-100 text-gray-600 active:bg-gray-200'
-                  }`}
-                  onClick={() => {
-                    setTempFacilities(prev =>
-                      prev.includes(facility)
-                        ? prev.filter(f => f !== facility)
-                        : [...prev, facility]
-                    );
-                  }}
-                >
-                  {facility}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* 底部按钮 */}
-      <div className="flex gap-3 px-5 py-4 border-t border-gray-100">
-        <Button 
-          size="large" 
-          className="flex-1 rounded-xl h-11 font-medium" 
-          onClick={() => setFilterVisible(false)}
-        >
-          取消
-        </Button>
-        <Button 
-          type="primary" 
-          size="large"
-          className="flex-1 rounded-xl h-11 bg-[#1a1a2e] hover:bg-[#2a2a3e] border-none font-medium"
-          onClick={() => {
-            // 将临时状态写回主状态，触发 useEffect 重新请求
-            setPriceRange(tempPriceRange);
-            setSelectedStars(tempStars);
-            setSelectedFacilities(tempFacilities);
-            setFilterVisible(false);
-          }}
-        >
-          查看 {getTempFilterCount() > 0 ? `(${getTempFilterCount()}项筛选)` : '结果'}
-        </Button>
-      </div>
-    </Modal>
-  );
 
   return (
       <div className="min-h-screen bg-[#f4f4f2] flex flex-col" ref={listRef}>
@@ -910,7 +525,14 @@ function HotelListContent() {
       </div>
 
       {/* 筛选弹窗 */}
-      {renderFilterModal()}
+      <FilterModal
+        visible={filterVisible}
+        onClose={() => setFilterVisible(false)}
+        priceRange={priceRange}
+        selectedStars={selectedStars}
+        selectedFacilities={selectedFacilities}
+        onConfirm={handleFilterConfirm}
+      />
     </div>
   );
 }

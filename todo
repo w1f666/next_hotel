@@ -1,31 +1,5 @@
 
 
-## 项目全面审查汇总
-
-### 一、安全漏洞（17 项）
-
-| 级别 | # | 问题 | 位置 |
-|------|---|------|------|
-| 🔴严重 | S1 | JWT 签发后从未验证，所有 API 裸奔 | middleware.ts / 所有 route.ts |
-| 🔴严重 | S2 | API 写操作无认证保护 | POST/PUT/DELETE hotels、upload |
-| 🔴严重 | S3 | Server Actions 无鉴权 | `deleteHotel`、`approveHotel`、`rejectHotel` |
-| 🔴严重 | S4 | 文件上传接口对外开放 | upload/route.ts |
-| 🔴严重 | S5 | 任何人可注册 admin 角色 | register/route.ts |
-| 🟠高危 | S6 | 无资源归属校验（IDOR） | 商户A可改删商户B的酒店 |
-| 🟠高危 | S7 | Token 存 localStorage | XSS 即可窃取 |
-| 🟠高危 | S8 | 客户端伪鉴权 | admin/layout.tsx 仅检查 token 是否存在 |
-| 🟠高危 | S9 | 无 CSRF 防护 | 所有状态修改接口 |
-| 🟡中危 | S10 | 登录无速率限制 | login/route.ts |
-| 🟡中危 | S11 | CSS 注入风险 | `url(${record.coverImage})` 直接拼入样式 |
-| 🟡中危 | S12 | 上传无文件数量/总量限制 | PUT 批量上传无上限 |
-| 🟡中危 | S13 | 仅校验 MIME 不校验文件魔术字节 | upload/route.ts |
-| 🟡中危 | S14 | 错误信息泄漏内部细节 | `error.message` 直接返回前端 |
-| 🟡中危 | S15 | pageSize 无上限校验 | 客户端可传 `pageSize=999999` |
-| 🟢低危 | S16 | 无密码强度服务端校验 | register/route.ts |
-| 🟢低危 | S17 | 缺少安全响应头 | 无 CSP、X-Frame-Options 等 |
-
----
-
 ### 二、逻辑漏洞与缺陷（22 项）
 
 #### 死路由 / 功能未实现
