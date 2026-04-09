@@ -26,6 +26,8 @@ export interface Hotel {
   gallery: string[];
   status: number; // 0=待审核, 1=已通过, 2=已拒绝
   rejectReason: string | null;
+  latitude: number | null;
+  longitude: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -87,6 +89,8 @@ export interface HotelListItem {
   minPrice: number;
   coverImage: string | null;
   facilities: string[];
+  latitude: number | null;
+  longitude: number | null;
   createdAt?: string;
 }
 
@@ -94,3 +98,36 @@ export interface HotelListItem {
 export type HotelTableRow = Pick<Hotel,
   'id' | 'name' | 'address' | 'starRating' | 'minPrice' | 'coverImage' | 'status' | 'rejectReason' | 'createdAt' | 'updatedAt'
 >;
+
+// 预定表单数据
+export interface BookingFormData {
+  roomId: number;
+  hotelId: number;
+  guestName: string;
+  guestPhone: string;
+  checkIn: string;  // YYYY-MM-DD
+  checkOut: string;  // YYYY-MM-DD
+}
+
+// 预定记录
+export interface Booking {
+  id: number;
+  orderNo: string;
+  roomId: number;
+  hotelId: number;
+  guestName: string;
+  guestPhone: string;
+  checkIn: string;
+  checkOut: string;
+  nights: number;
+  totalPrice: number;
+  status: number;  // 0=待确认 1=已确认 2=已取消 3=已完成
+  createdAt: string;
+}
+
+export const BOOKING_STATUS_MAP: Record<number, { label: string; color: string }> = {
+  0: { label: '待确认', color: 'processing' },
+  1: { label: '已确认', color: 'success' },
+  2: { label: '已取消', color: 'default' },
+  3: { label: '已完成', color: 'success' },
+};

@@ -3,35 +3,38 @@
 import React from 'react';
 import { Layout, Button } from 'antd';
 import { LeftOutlined } from '@ant-design/icons';
-import { useRouter } from 'next/navigation';
+import { useParams, usePathname, useRouter } from 'next/navigation';
 
 const { Header, Content } = Layout;
 
 export default function NoTabbarLayout({ children }: { children: React.ReactNode }) {
     const router = useRouter();
+    const pathname = usePathname();
+    const handleback = () => {
+        if(router){
+            router.back();
+        }
+        else{
+            window.history.back();
+        }
+    }
 
     return (
-        <Layout className="min-h-screen bg-white max-w-md mx-auto shadow-2xl overflow-hidden">
-            <Header className="bg-white border-b border-gray-50 flex items-center px-4 h-14 sticky top-0 z-50">
-                <Button
-                    type="text"
-                    icon={<LeftOutlined />}
-                    onClick={() => router.back()}
-                    className="flex items-center justify-center"
-                />
-                <div className="flex-grow text-center font-bold text-gray-800 pr-8">
-                    详情信息
-                </div>
-            </Header>
+        <Layout className="min-h-screen bg-white max-w-md mx-auto shadow-2xl overflow-auto">
+            {!pathname.startsWith('/hotels/list') && (<button className="fixed top-5 left-5 z-50 
+        flex items-center gap-1.5 
+        px-4 py-2 
+        rounded-lg border border-slate-200 
+        bg-white/80 backdrop-blur-md 
+        text-sm font-medium text-slate-700 
+        shadow-sm 
+        transition-all duration-200 ease-in-out"
+        onClick={handleback}>
+                <LeftOutlined/>
+            </button>) }
             <Content>
                 {children}
             </Content>
-            <style jsx global>{`
-        .ant-layout-header {
-          padding: 0 16px !important;
-          line-height: normal !important;
-        }
-      `}</style>
         </Layout>
     );
 }

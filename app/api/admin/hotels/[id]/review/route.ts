@@ -30,7 +30,11 @@ export async function PATCH(
         where: { id: hotelId },
         data: { status: 1, rejectReason: null },
       });
+      revalidatePath('/hotels');
       revalidatePath('/hotels/list');
+      revalidatePath(`/hotels/${hotelId}`);
+      revalidatePath('/admin/workspace');
+      revalidatePath('/admin/hotels');
       return NextResponse.json({ success: true, message: '审核通过' });
     }
 
@@ -42,7 +46,11 @@ export async function PATCH(
         where: { id: hotelId },
         data: { status: 2, rejectReason: reason.trim() },
       });
+      revalidatePath('/hotels');
       revalidatePath('/hotels/list');
+      revalidatePath(`/hotels/${hotelId}`);
+      revalidatePath('/admin/workspace');
+      revalidatePath('/admin/hotels');
       return NextResponse.json({ success: true, message: '已拒绝' });
     }
 
@@ -74,7 +82,11 @@ export async function DELETE(
     }
 
     await prisma.hotel.delete({ where: { id: hotelId } });
+    revalidatePath('/hotels');
     revalidatePath('/hotels/list');
+    revalidatePath(`/hotels/${hotelId}`);
+    revalidatePath('/admin/workspace');
+    revalidatePath('/admin/hotels');
     return NextResponse.json({ success: true, message: '酒店已删除' });
   } catch (error) {
     console.error('[DELETE /api/admin/hotels/:id/review]', error);

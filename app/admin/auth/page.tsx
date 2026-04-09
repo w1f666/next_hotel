@@ -171,15 +171,16 @@ export default function AdminAuthPage(){
 
       message.success('登录成功');
       // token 已通过 HttpOnly Cookie 自动设置，前端只存储非敏感信息用于 UI 展示
-      localStorage.setItem('role', data.role);
-      localStorage.setItem('userId', String(data.userId));
+      const loginData = data.data;
+      localStorage.setItem('role', loginData.role);
+      localStorage.setItem('userId', String(loginData.userId));
       // 存储 CSRF token 用于写操作
-      if (data.csrfToken) {
-        localStorage.setItem('csrfToken', data.csrfToken);
+      if (loginData.csrfToken) {
+        localStorage.setItem('csrfToken', loginData.csrfToken);
       }
       
       // 根据角色跳转到不同页面
-      if (data.role === 'admin') {
+      if (loginData.role === 'admin') {
         router.push('/admin/hotels');
       } else {
         router.push('/admin/workspace');

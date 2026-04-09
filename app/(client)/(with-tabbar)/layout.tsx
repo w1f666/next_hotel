@@ -39,12 +39,6 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
                     </div>
                 ))}
             </Footer>
-
-            <style jsx global>{`
-        .ant-layout-footer {
-          padding: 0 !important;
-        }
-      `}</style>
         </Layout>
         </App>
     );

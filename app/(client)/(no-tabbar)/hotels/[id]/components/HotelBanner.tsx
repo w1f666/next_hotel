@@ -1,4 +1,5 @@
 'use client';
+import 'antd-mobile/es/global';
 import React, { useState } from 'react';
 import { Swiper, ImageViewer, Image } from 'antd-mobile';
 

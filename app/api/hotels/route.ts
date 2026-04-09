@@ -3,7 +3,13 @@ import { revalidatePath } from 'next/cache';
 import { getAllHotels, getPublishedHotels, createHotel } from '@/lib/actions/hotel.actions';
 
 /**
- * GET /api/hotels — 获取酒店列表
+ * GET /api/hotels — 公开接口，获取酒店列表
+ *
+ * 使用场景：
+ * - C 端首页 (?published=true)：获取已发布酒店简要列表
+ * - C 端列表页 (?status=1&cursor=&keyword=...)：游标分页 + 筛选
+ *
+ * 无需认证，middleware 不拦截 GET
  */
 export async function GET(req: NextRequest) {
   try {
@@ -28,6 +34,8 @@ export async function GET(req: NextRequest) {
     const maxPrice = searchParams.get('maxPrice');
     const starRating = searchParams.get('starRating');
     const facilitiesParam = searchParams.get('facilities');
+    const paramcity = searchParams.get('city');
+    const city = paramcity === '全部' ? 'all' : paramcity
 
     // 如果指定了 published=true，返回已发布的酒店（用于C端）
     if (published === 'true') {
@@ -46,7 +54,6 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // 否则返回分页列表（支持游标分页和传统分页）
     // cursor: undefined → 传统分页, null → 游标首页, number → 游标翻页
     const result = await getAllHotels({
       page,
@@ -58,6 +65,7 @@ export async function GET(req: NextRequest) {
       maxPrice: maxPrice ? Number(maxPrice) : undefined,
       starRating: starRatingFilter,
       facilities: facilitiesParam ? facilitiesParam.split(',').filter(Boolean) : undefined,
+      city: city || undefined,
     });
 
     return NextResponse.json({ success: true, ...result });
@@ -71,7 +79,11 @@ export async function GET(req: NextRequest) {
 }
 
 /**
- * POST /api/hotels — 创建新酒店
+ * POST /api/hotels — 商户创建新酒店（需认证）
+ *
+ * 使用场景：admin/workspace/publish 页面提交表单
+ * 认证：middleware 验证 JWT + CSRF，注入 x-user-id / x-user-role
+ * 权限：仅 merchant 角色
  */
 export async function POST(req: NextRequest) {
   try {
@@ -101,7 +113,10 @@ export async function POST(req: NextRequest) {
     // merchantId 从 token 获取，不再信任客户端
     const hotel = await createHotel(userId, formData);
 
+    revalidatePath('/hotels');
     revalidatePath('/hotels/list');
+    revalidatePath('/admin/workspace');
+    revalidatePath('/admin/hotels');
 
     return NextResponse.json(
       { success: true, message: '酒店信息已保存，等待审核', data: hotel },

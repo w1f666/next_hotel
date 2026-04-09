@@ -4,7 +4,13 @@ import { getHotelById, updateHotel, deleteHotel } from '@/lib/actions/hotel.acti
 import prisma from '@/lib/prisma';
 
 /**
- * GET /api/hotels/:id — 获取酒店详情（含房型）
+ * GET /api/hotels/:id — 公开接口，获取酒店详情（含房型）
+ *
+ * 使用场景：
+ * - C 端详情页 /hotels/[id]：游客浏览酒店信息
+ * - 管理端编辑页 /admin/workspace/[id]/edit：加载酒店数据供编辑
+ *
+ * 无需认证，所有人可访问
  */
 export async function GET(
   req: NextRequest,
@@ -32,7 +38,11 @@ export async function GET(
 }
 
 /**
- * PUT /api/hotels/:id — 更新酒店信息
+ * PUT /api/hotels/:id — 更新酒店信息（需认证）
+ *
+ * 使用场景：admin/workspace/[id]/edit 页面保存修改
+ * 认证：middleware 验证 JWT + CSRF
+ * 权限：merchant 仅能修改自己的酒店（IDOR 校验），admin 可改任意
  */
 export async function PUT(
   req: NextRequest,
@@ -67,7 +77,11 @@ export async function PUT(
 
     const hotel = await updateHotel(hotelId, body);
 
+    revalidatePath('/hotels');
     revalidatePath('/hotels/list');
+    revalidatePath(`/hotels/${hotelId}`);
+    revalidatePath('/admin/workspace');
+    revalidatePath('/admin/hotels');
 
     return NextResponse.json({
       success: true,
@@ -84,7 +98,11 @@ export async function PUT(
 }
 
 /**
- * DELETE /api/hotels/:id — 删除酒店
+ * DELETE /api/hotels/:id — 删除酒店（需认证）
+ *
+ * 使用场景：admin/workspace 页面和 admin/hotels 管理页面
+ * 认证：middleware 验证 JWT + CSRF
+ * 权限：merchant 仅能删除自己的酒店（IDOR 校验），admin 可删任意
  */
 export async function DELETE(
   req: NextRequest,
@@ -110,7 +128,11 @@ export async function DELETE(
 
     await deleteHotel(hotelId);
 
+    revalidatePath('/hotels');
     revalidatePath('/hotels/list');
+    revalidatePath(`/hotels/${hotelId}`);
+    revalidatePath('/admin/workspace');
+    revalidatePath('/admin/hotels');
 
     return NextResponse.json({ success: true, message: '酒店已删除' });
   } catch (error) {

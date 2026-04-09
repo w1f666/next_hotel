@@ -49,8 +49,9 @@ export async function getAllHotels(params?: {
   maxPrice?: number;
   starRating?: number | number[];
   facilities?: string[];
+  city?: string;
 }) {
-  const { page = 1, pageSize = 10, cursor, status, keyword, minPrice, maxPrice, starRating, facilities } = params || {};
+  const { page = 1, pageSize = 10, cursor, status, keyword, minPrice, maxPrice, starRating, facilities, city } = params || {};
 
   const where: Prisma.HotelWhereInput = {};
   if (status !== undefined && status !== null) {
@@ -58,6 +59,11 @@ export async function getAllHotels(params?: {
   }
   if (keyword) {
     where.name = { contains: keyword };
+  }
+
+  // 城市筛选 —— 匹配地址中包含的城市名
+  if (city && city !== 'all') {
+    where.address = { contains: city };
   }
   
   // 价格筛选

@@ -13,13 +13,14 @@ import type { HotelListItem } from '@/types';
 dayjs.locale('zh-cn');
 
 const { RangePicker } = DatePicker;
-const { Text, Title } = Typography;
+const { Title } = Typography;
 
 export default function HotelSearchPage() {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState('domestic');
     const [hotels, setHotels] = useState<HotelListItem[]>([]);
     const [loading, setLoading] = useState(true);
+    const [city, setCity] = useState('');
 
     // 搜索参数
     const [keyword, setKeyword] = useState('');
@@ -129,7 +130,7 @@ export default function HotelSearchPage() {
                         {/* 地点 & 定位 */}
                         <div className="flex items-center border-b border-gray-100 pb-3 gap-2">
                             <div className="flex-shrink-0 flex items-center gap-1 cursor-pointer hover:text-blue-600 transition-colors">
-                                <span className="text-xl font-bold">上海</span>
+                                <span className="text-xl font-bold">{city}</span>
                                 <EnvironmentOutlined className="text-gray-400" />
                             </div>
                             <div className="h-6 w-[1px] bg-gray-200 mx-2"></div>

@@ -5,7 +5,6 @@ import { useParams } from "next/navigation";
 import { Toast, Skeleton, ErrorBlock, CalendarPicker } from "antd-mobile";
 import { unstableSetRender } from 'antd-mobile';
 import { createRoot, type Root } from 'react-dom/client';
-import HotelNavBar from "./components/HotelNavBar";
 import HotelBanner from "./components/HotelBanner";
 import HotelInfo from "./components/HotelInfo";
 import RoomList from "./components/RoomList";
@@ -85,13 +84,6 @@ export default function HotelDetailPage() {
     }
   }, [hotelId]);
 
-  const handleCalendarConfirm = (val: [Date, Date] | null) => {
-    if (val) {
-      setDateRange(val);
-      Toast.show({ content: `已选择 ${getNights(val[0], val[1])} 晚`, icon: 'success' });
-    }
-  };
-
   if (error) {
     return <ErrorBlock status="default" title="加载失败" description="请检查网络或稍后再试" fullPage />;
   }
@@ -113,9 +105,7 @@ export default function HotelDetailPage() {
 
   return (
     <div className="bg-[#f5f5f5] min-h-screen pb-safe">
-      {/* <HotelNavBar title={data.name} /> */}
 
-      {/* ✅ 核心修复点：加上 || [] 防止 map 报错 */}
       <HotelBanner images={data.gallery || []} />
 
       <main className="px-3 relative -mt-4 z-10 space-y-3 pb-8">
@@ -148,7 +138,7 @@ export default function HotelDetailPage() {
         </div>
 
         <div className="mt-2">
-           <RoomList rooms={data.rooms || []} />
+           <RoomList rooms={data.rooms || []} hotelId={data.id} checkIn={dateRange[0]} checkOut={dateRange[1]} />
         </div>
       </main>
 
@@ -168,7 +158,6 @@ export default function HotelDetailPage() {
           setCalendarVisible(false);
           Toast.show({
             content: `已选择 ${getNights(val[0], val[1])} 晚`,
-            icon: 'success',
           });
         }}
         onClose={() => setCalendarVisible(false)}

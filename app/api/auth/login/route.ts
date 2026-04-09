@@ -9,6 +9,13 @@ import {
   checkRateLimit,
 } from '@/lib/auth';
 
+/**
+ * POST /api/auth/login — 用户登录（公开接口）
+ *
+ * 使用场景：admin/auth 登录页面
+ * 返回：设置 HttpOnly JWT cookie + csrf cookie，响应体含 role/userId/csrfToken
+ * 安全：速率限制（按 IP），密码 bcrypt 比对
+ */
 export async function POST(request: Request) {
   try {
     // 速率限制
@@ -16,7 +23,7 @@ export async function POST(request: Request) {
     const rateCheck = checkRateLimit(ip);
     if (!rateCheck.allowed) {
       return NextResponse.json(
-        { message: '登录尝试过于频繁，请稍后再试' },
+        { success: false, message: '登录尝试过于频繁，请稍后再试' },
         { status: 429, headers: { 'Retry-After': String(Math.ceil(rateCheck.retryAfterMs / 1000)) } }
       );
     }
@@ -25,7 +32,7 @@ export async function POST(request: Request) {
     const { username, password } = body;
 
     if (!username || !password) {
-      return NextResponse.json({ message: '账号或密码不能为空' }, { status: 400 });
+      return NextResponse.json({ success: false, message: '账号或密码不能为空' }, { status: 400 });
     }
 
     const user = await prisma.user.findUnique({
@@ -33,12 +40,12 @@ export async function POST(request: Request) {
     });
 
     if (!user) {
-      return NextResponse.json({ message: '账号或密码错误' }, { status: 401 });
+      return NextResponse.json({ success: false, message: '账号或密码错误' }, { status: 401 });
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      return NextResponse.json({ message: '账号或密码错误' }, { status: 401 });
+      return NextResponse.json({ success: false, message: '账号或密码错误' }, { status: 401 });
     }
 
     // 签发 JWT
@@ -47,11 +54,14 @@ export async function POST(request: Request) {
 
     // 通过 Set-Cookie 写入 HttpOnly cookie（token）+ 可读 cookie（csrf）
     const response = NextResponse.json({
+      success: true,
       message: '登录成功',
-      role: user.role,
-      username: user.username,
-      userId: user.id,
-      csrfToken, // 前端需要存储并在写操作中带上 X-CSRF-Token header
+      data: {
+        role: user.role,
+        username: user.username,
+        userId: user.id,
+        csrfToken, // 前端需要存储并在写操作中带上 X-CSRF-Token header
+      },
     });
 
     response.headers.append('Set-Cookie', createTokenCookie(token));
@@ -60,7 +70,7 @@ export async function POST(request: Request) {
     return response;
   } catch (error) {
     console.error('登录错误:', error);
-    return NextResponse.json({ message: '服务器内部错误' }, { status: 500 });
+    return NextResponse.json({ success: false, message: '服务器内部错误' }, { status: 500 });
   }
 }
 

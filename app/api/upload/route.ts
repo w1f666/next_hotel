@@ -56,6 +56,13 @@ async function processFile(file: File): Promise<{ url: string; filename: string;
   };
 }
 
+/**
+ * POST /api/upload — 单文件上传（需认证）
+ *
+ * 使用场景：HotelForm 中上传封面图 / 房型图片
+ * 认证：middleware 验证 JWT + CSRF
+ * 限制：仅图片（JPEG/PNG/GIF/WebP），单文件 ≤5MB，验证魔术字节
+ */
 export async function POST(req: NextRequest) {
   try {
     // 鉴权由 middleware 完成，这里二次确认
@@ -130,6 +137,13 @@ export async function POST(req: NextRequest) {
   }
 }
 
+/**
+ * PUT /api/upload — 多文件批量上传（需认证）
+ *
+ * 使用场景：HotelForm 中上传相册图片（多张）
+ * 认证：middleware 验证 JWT + CSRF
+ * 限制：单次最多 10 个文件
+ */
 // 处理多文件上传
 export async function PUT(req: NextRequest) {
   try {

@@ -8,7 +8,7 @@ import {
 import {
   PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined,
   ShopOutlined, ClockCircleOutlined, CheckCircleOutlined,
-  CloseCircleOutlined, EyeOutlined, ReloadOutlined,
+  CloseCircleOutlined, EyeOutlined, ReloadOutlined
 } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
 import type { Hotel } from '@/types';

@@ -7,6 +7,8 @@ export function serializeHotel(hotel: any) {
     openingTime: hotel.openingTime ? hotel.openingTime.toISOString().split('T')[0] : null,
     facilities: Array.isArray(hotel.facilities) ? hotel.facilities : [],
     gallery: Array.isArray(hotel.gallery) ? hotel.gallery : [],
+    latitude: hotel.latitude ?? null,
+    longitude: hotel.longitude ?? null,
     createdAt: hotel.createdAt?.toISOString ? hotel.createdAt.toISOString() : hotel.createdAt,
     updatedAt: hotel.updatedAt?.toISOString ? hotel.updatedAt.toISOString() : hotel.updatedAt,
   };

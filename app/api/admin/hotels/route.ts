@@ -3,7 +3,11 @@ import prisma from '@/lib/prisma';
 import { serializeHotel } from '@/lib/serialize';
 
 /**
- * GET /api/admin/hotels — 管理员获取所有酒店列表（用于审核管理）
+ * GET /api/admin/hotels — 管理员获取所有酒店列表（需认证）
+ *
+ * 使用场景：admin/hotels 管理页面，管理员审核、管理所有酒店
+ * 认证：middleware 验证 JWT，注入 x-user-role
+ * 权限：仅 admin 角色
  */
 export async function GET(req: NextRequest) {
   try {
@@ -19,7 +23,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: { hotels: hotels.map(serializeHotel) },
+      data: hotels.map(serializeHotel),
     });
   } catch (error) {
     console.error('[GET /api/admin/hotels]', error);

@@ -10,11 +10,11 @@
     "lint": "eslint",
     "db:seed": "prisma db seed"
   },
-
   "dependencies": {
     "@ant-design/cssinjs": "^2.1.0",
     "@ant-design/icons": "^6.1.0",
     "@prisma/client": "^6.19.2",
+    "@tanstack/react-virtual": "^3.13.23",
     "antd": "^6.2.2",
     "antd-mobile": "5.42.3",
     "antd-mobile-icons": "^0.3.0",

@@ -1,91 +1,15 @@
 
 
-### 二、逻辑漏洞与缺陷（22 项）
-
-#### 死路由 / 功能未实现
-
-| # | 问题 | 位置 | 说明 |
-|---|------|------|------|
-| L1 | **底部 Tab 3个路由 404** | layout.tsx/(with-tabbar)/layout.tsx#L17-L20) | `/favorites`、`/orders`、`/mine` 三个页面**完全不存在**，点击直接 404 |
-| L2 | **预订功能是假的** | RoomList.tsx `handleBook` | 点"预订"只弹 Toast，无任何预订流程 |
-| L3 | **地图功能占位** | HotelInfo.tsx `openMap` | 点击地图只弹"暂未开放"，但 UI 上仍然展示可点击 |
-| L4 | **日期/城市筛选未接入** | list/page.tsx | `handleCityClick` / `handleDateClick` 只弹提示不生效 |
-| L5 | **Admin 首页是空白** | admin/page.tsx | `return null`，无任何仪表盘内容 |
-| L6 | **HotelNavBar 引入但注释掉** | hotels/[id]/page.tsx | 组件已导入但 `{/* <HotelNavBar /> */}` 未使用 |
-
-#### API 设计缺陷
-
-| # | 问题 | 位置 | 说明 |
-|---|------|------|------|
-| L7 | **两套重复的酒店详情 API** | `/api/hotel?id=x` 与 `/api/hotels/[id]` | 功能完全相同，返回格式不同，字段命名不同（`rating` vs `starRating`） |
-| L8 | **API 响应格式不统一** | hotels/route.ts GET | published 返回 `{ data: [] }`，分页返回 `{ data: [], pagination }`，游标返回 `{ data: [], nextCursor }`，前端需要硬判断 |
-| L9 | **Token 获取了不使用** | admin/layout.tsx、publish/page.tsx | `localStorage.getItem('token')` 获取后从未加到请求 `Authorization` 头 |
-| L10 | **revalidatePath 范围不全** | hotels/[id]/route.ts | 仅 `revalidatePath('/hotels/list')`，`/hotels` 首页和 `/admin/workspace` 仍是旧缓存 |
-
 #### 数据 / 状态问题
 
 | # | 问题 | 位置 | 说明 |
 |---|------|------|------|
-| L11 | **游标分页双状态不同步** | list/page.tsx | `cursor` state 和 `cursorRef` 各自管理，部分代码只更新其一 |
-| L12 | **Calendar onChange + onConfirm 双重 setState** | hotels/[id]/page.tsx | `onChange` 和 `onConfirm` 都调 `setDateRange`，逻辑冗余 |
-| L13 | **房间图片 URL 双源冲突** | HotelForm.tsx | `roomImageUrls` state 与 `form.values.rooms[].imageUrl` 两份数据源，reset 时不同步 |
-| L14 | **请求无 AbortController** | workspace/page.tsx 等 | 快速切换筛选条件时旧请求可能后到，导致数据错乱 |
-| L15 | **表单可双击提交** | publish/page.tsx | loading 状态下按钮未设 `disabled`，可重复提交 |
+|3、 | **游标分页双状态不同步** | list/page.tsx | `cursor` state 和 `cursorRef` 各自管理，部分代码只更新其一 |
+| 4、| **Calendar onChange + onConfirm 双重 setState** | hotels/[id]/page.tsx | `onChange` 和 `onConfirm` 都调 `setDateRange`，逻辑冗余 |
+|5、 | **房间图片 URL 双源冲突** | HotelForm.tsx | `roomImageUrls` state 与 `form.values.rooms[].imageUrl` 两份数据源，reset 时不同步 |
+|6、| **请求无 AbortController** | workspace/page.tsx 等 | 快速切换筛选条件时旧请求可能后到，导致数据错乱 |
+7、 **表单可双击提交** | publish/page.tsx | loading 状态下按钮未设 `disabled`，可重复提交 |
 
-#### 校验缺失
 
-| # | 问题 | 位置 | 说明 |
-|---|------|------|------|
-| L16 | **房间价格可为 0 或负数** | HotelForm.tsx → API | 前后端均未校验 `price > 0` |
-| L17 | **starRating 无边界校验** | hotels/route.ts | 服务端不校验星级范围（1-5），可传 0 或 99 |
-| L18 | **空房间可提交** | HotelForm.tsx | 用户添加空房型行不填写也能提交 |
-| L19 | **merchantId 仅客户端提供** | POST /api/hotels | 从前端 `body.merchantId` 取值而非从 Token 解析，任何人可冒充任何商户 |
-| L20 | **getNights 日期计算潜在偏差** | hotels/[id]/page.tsx | `Math.ceil` 在跨时区或夏令时场景可能多算一天 |
-| L21 | **images 空数组无兜底** | HotelBanner.tsx | `images=[]` 时 Swiper 渲染空白，无占位图 |
-| L22 | **`any` 类型滥用** | HotelForm.tsx、hotel.actions.ts | `serializeHotel(hotel: any)`、`handleFinish(values: any)` 等丧失类型安全 |
 
----
 
-### 三、代码重复 / 类型散落
-
-#### 重复的类型定义
-
-| 类型/常量 | 定义位置（重复） | 应归属 |
-|-----------|------------------|--------|
-| `HotelItem` | hotels/page.tsx **+** list/page.tsx | → index.ts |
-| `CITIES` | hotels/page.tsx **+** list/page.tsx | → constants/hotel.ts |
-| `STAR_OPTIONS` | hotels/page.tsx **+** list/page.tsx（types/ 已有但未引用） | → 统一引用 types/ |
-| `FACILITY_OPTIONS` | hotels/page.tsx **+** list/page.tsx（types/ 已有但未引用） | → 统一引用 types/ |
-| `statusMap` / `iconMap` | HotelTableClient.tsx **+** workspace/page.tsx | → 统一引用 `HOTEL_STATUS_MAP` |
-| `Room` / `HotelDetailResponse` | api/hotel/route.ts 内联定义 | → index.ts |
-| `HotelTableRow` | HotelTableClient.tsx 内联 | → index.ts |
-| `LoginFieldType` / `RegisterFieldType` | auth/page.tsx 内联 | → index.ts |
-| `REGEX` 校验规则 | auth/page.tsx 内联 | → lib/validators.ts |
-
-#### 可复用组件
-
-| 组件 | 当前状态 | 建议 |
-|------|----------|------|
-| **HotelCard** | 两处各写一套 | → `components/HotelCard.tsx` |
-| **PriceFilter** | 两处完全相同的价格快捷标签 | → `components/PriceFilter.tsx` |
-| **StatusTag** | 两处各自 if/switch 渲染 | → `components/StatusTag.tsx` |
-| **useDebounce** | 两处各自 useRef 实现防抖 | → `hooks/useDebounce.ts` |
-| **ImageUploader** | HotelForm 内封面/房间图片逻辑重复 | → `components/ImageUploader.tsx` |
-| **AdminPageContainer** | 各 admin 页重复 `maxWidth:960` 布局 | → 布局组件 |
-| **EmptyState** | 多处不同的空状态 UI | → 统一组件 |
-
----
-
-### 四、后台 UI 优化方向（简要回顾）
-
-1. **加侧边栏**：merchant/admin 角色按菜单分区导航
-2. **Dashboard 首页**：替代空白页，展示待办 + 数据图表
-3. **批量操作 + 行内编辑**：表格增加多选批量审核
-4. **酒店详情用 Drawer**：取代跳页再跳回
-5. **品牌色 Token 化**：通过 Antd ConfigProvider 统一，加深色模式
-6. **数据可视化**：趋势图、占比饼图替代裸数字卡片
-7. **响应式**：去掉 960px 固定宽，自适应大屏
-
----
-
-**总计问题**：安全漏洞 17 项 + 逻辑缺陷 22 项 + 重复/散落 9 组 + UI 优化 7 方向 = **55 项待改进**。需要我按优先级排出修复计划吗？
