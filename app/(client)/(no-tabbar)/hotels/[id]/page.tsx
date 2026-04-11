@@ -54,34 +54,35 @@ export default function HotelDetailPage() {
   const hotelId = params?.id as string;
 
   useEffect(() => {
+    const controller = new AbortController();
     const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`/api/hotels/${hotelId}`); 
+        const response = await fetch(`/api/hotels/${hotelId}`, { signal: controller.signal }); 
         
         if (!response.ok) {
           throw new Error('Network response was not ok');
         }
 
         const result = await response.json();
-        // console.log("酒店数据：", result.data);
-        // console.log("rooms 数据：", result.data.rooms);
         if (result.success) {
           setData(result.data);
         } else {
           throw new Error(result.message || '获取数据失败');
         }
       } catch (err) {
+        if (controller.signal.aborted) return;
         console.error("Fetch hotel detail failed:", err);
         setError(true);
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     };
 
     if (hotelId) {
       fetchData();
     }
+    return () => controller.abort();
   }, [hotelId]);
 
   if (error) {
@@ -154,7 +155,6 @@ export default function HotelDetailPage() {
         }}
         onConfirm={(val: [Date, Date] | null) => {
           if (!val) return;
-          setDateRange(val);
           setCalendarVisible(false);
           Toast.show({
             content: `已选择 ${getNights(val[0], val[1])} 晚`,

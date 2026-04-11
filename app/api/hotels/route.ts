@@ -14,58 +14,53 @@ import { getAllHotels, getPublishedHotels, createHotel } from '@/lib/actions/hot
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const published = searchParams.get('published');
-    const page = Math.max(Number(searchParams.get('page') || 1), 1);
-    const pageSize = Math.min(Math.max(Number(searchParams.get('pageSize') || 10), 1), 100);
-    
-    // 处理游标参数：如果存在 cursor 参数（即使是空字符串），则使用游标分页
-    const cursorParam = searchParams.get('cursor');
-    let cursor: number | null | undefined = undefined;
-    if (cursorParam !== null) {
-      // cursor 参数存在，启用游标分页
-      cursor = cursorParam === '' ? null : Number(cursorParam);
-    }
-    
-    const status = searchParams.get('status');
-    const keyword = searchParams.get('keyword') || '';
-    
-    // 新增筛选参数
-    const minPrice = searchParams.get('minPrice');
-    const maxPrice = searchParams.get('maxPrice');
-    const starRating = searchParams.get('starRating');
-    const facilitiesParam = searchParams.get('facilities');
-    const paramcity = searchParams.get('city');
-    const city = paramcity === '全部' ? 'all' : paramcity
 
-    // 如果指定了 published=true，返回已发布的酒店（用于C端）
-    if (published === 'true') {
+    // ========== 快捷路径：首页获取已发布酒店 ==========
+    if (searchParams.get('published') === 'true') {
       const hotels = await getPublishedHotels();
       return NextResponse.json({ success: true, data: hotels });
     }
 
-    // 处理星级筛选
+    // ========== 通用分页参数 ==========
+    const pageSize = Math.min(Math.max(Number(searchParams.get('pageSize') || 10), 1), 100);
+
+    // ========== 游标 / 传统分页判定 ==========
+    // cursor 参数存在（即使空串）→ 游标分页；不存在 → 传统 offset 分页
+    const cursorParam = searchParams.get('cursor');
+    let cursor: number | null | undefined;
+    if (cursorParam !== null) {
+      cursor = cursorParam === '' ? null : Number(cursorParam);
+    }
+    // 传统分页才需要 page
+    const page = cursor === undefined ? Math.max(Number(searchParams.get('page') || 1), 1) : 1;
+
+    // ========== 筛选条件 ==========
+    const statusParam = searchParams.get('status');
+    const keyword = searchParams.get('keyword') || undefined;
+    const minPrice = searchParams.get('minPrice');
+    const maxPrice = searchParams.get('maxPrice');
+    const starRating = searchParams.get('starRating');
+    const facilitiesParam = searchParams.get('facilities');
+    const cityParam = searchParams.get('city');
+
+    // 星级：支持逗号分隔多选
     let starRatingFilter: number | number[] | undefined;
     if (starRating) {
       const stars = starRating.split(',').map(Number).filter(n => !isNaN(n));
-      if (stars.length === 1) {
-        starRatingFilter = stars[0];
-      } else if (stars.length > 1) {
-        starRatingFilter = stars;
-      }
+      starRatingFilter = stars.length === 1 ? stars[0] : stars.length > 1 ? stars : undefined;
     }
 
-    // cursor: undefined → 传统分页, null → 游标首页, number → 游标翻页
     const result = await getAllHotels({
       page,
       pageSize,
       cursor,
-      status: status !== null && status !== '' ? Number(status) : undefined,
-      keyword: keyword || undefined,
+      status: statusParam ? Number(statusParam) : undefined,
+      keyword,
       minPrice: minPrice ? Number(minPrice) : undefined,
       maxPrice: maxPrice ? Number(maxPrice) : undefined,
       starRating: starRatingFilter,
       facilities: facilitiesParam ? facilitiesParam.split(',').filter(Boolean) : undefined,
-      city: city || undefined,
+      city: cityParam === '全部' ? undefined : (cityParam || undefined),
     });
 
     return NextResponse.json({ success: true, ...result });

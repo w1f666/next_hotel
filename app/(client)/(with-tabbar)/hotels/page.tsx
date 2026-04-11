@@ -29,9 +29,10 @@ export default function HotelSearchPage() {
 
     // 获取已发布的酒店列表
     useEffect(() => {
+        const controller = new AbortController();
         const fetchHotels = async () => {
             try {
-                const res = await fetch('/api/hotels?published=true');
+                const res = await fetch('/api/hotels?published=true', { signal: controller.signal });
                 if (!res.ok) {
                     console.error('获取酒店列表失败');
                     return;
@@ -41,12 +42,14 @@ export default function HotelSearchPage() {
                     setHotels(json.data);
                 }
             } catch (error) {
+                if (controller.signal.aborted) return;
                 console.error('获取酒店列表失败:', error);
             } finally {
-                setLoading(false);
+                if (!controller.signal.aborted) setLoading(false);
             }
         };
         fetchHotels();
+        return () => controller.abort();
     }, []);
 
     // 点击搜索按钮跳转到列表页

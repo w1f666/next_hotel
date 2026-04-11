@@ -11,7 +11,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { 
   EnvironmentOutlined, SearchOutlined, 
   FilterOutlined, CloseOutlined, 
-  CalendarOutlined, FireFilled
+  CalendarOutlined, FireFilled, LeftOutlined
 } from '@ant-design/icons';
 import dayjs, { Dayjs } from 'dayjs';
 import 'dayjs/locale/zh-cn';
@@ -57,6 +57,7 @@ function HotelListContent() {
   const cursorRef = useRef<number | null>(null);
   const hasMoreRef = useRef(true);
   const loadingMoreRef = useRef(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
   
   // ===== 筛选条件 =====
   const [filterVisible, setFilterVisible] = useState(false);
@@ -124,6 +125,13 @@ function HotelListContent() {
 
   // ===== 数据请求（不需要 useCallback，通过 ref 给滚动回调使用） =====
   const fetchHotels = async (isLoadMore: boolean) => {
+    // 新的筛选请求时取消上一次未完成的请求
+    if (!isLoadMore) {
+      abortControllerRef.current?.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     try {
       if (!isLoadMore) {
         setLoading(true);
@@ -146,7 +154,7 @@ function HotelListContent() {
       const cityLabel = CITIES.find(c => c.value === city)?.label;
       if (cityLabel) params.set('city', cityLabel);
       
-      const res = await fetch(`/api/hotels?${params}`);
+      const res = await fetch(`/api/hotels?${params}`, { signal: controller.signal });
       if (!res.ok) return;
       const json = await res.json();
       
@@ -173,8 +181,10 @@ function HotelListContent() {
         setHasMore(json.hasMore ?? false);
       }
     } catch (error) {
+      if (controller.signal.aborted) return;
       console.error('获取酒店列表失败:', error);
     } finally {
+      if (controller.signal.aborted) return;
       setLoading(false);
       loadingMoreRef.current = false;
       setLoadingMore(false);
@@ -189,6 +199,9 @@ function HotelListContent() {
   useEffect(() => {
     fetchRef.current(false);
   }, [debouncedKeyword, priceRange, selectedStars, selectedFacilities, city]);
+
+  // 组件卸载时取消未完成的请求
+  useEffect(() => () => { abortControllerRef.current?.abort(); }, []);
 
   // ===== 虚拟滚动 =====
   const virtualizer = useVirtualizer({
@@ -226,9 +239,16 @@ function HotelListContent() {
       <div className="h-screen flex flex-col bg-[#f4f4f2]">
       {/* ====== 顶部搜索栏 —— 深色高级感 ====== */}
       <div className="bg-gradient-to-br from-[#1a1a2e] via-[#1e1e32] to-[#252538] sticky top-0 z-40 pb-4 shadow-[0_4px_20px_rgba(0,0,0,0.15)] flex-shrink-0">
-        {/* 城市 + 日期 */}
+        {/* 返回首页 + 城市 + 日期 */}
         <div className="px-4 pt-3.5 pb-1">
           <div className="flex items-center gap-2.5">
+            {/* 返回首页 */}
+            <div
+              className="flex items-center justify-center w-8 h-8 rounded-lg bg-white/10 border border-white/10 cursor-pointer active:bg-white/20 transition-all flex-shrink-0"
+              onClick={() => router.push('/hotels')}
+            >
+              <LeftOutlined className="text-white text-xs" />
+            </div>
             {/* 城市选择器 */}
             <div className="relative" ref={cityPickerRef}>
               <div 

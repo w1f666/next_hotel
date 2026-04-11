@@ -25,21 +25,24 @@ export default function EditHotelPage({ params }: { params: Promise<{ id: string
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const controller = new AbortController();
     const fetchHotel = async () => {
       try {
-        const result = await fetchApi(`/api/hotels/${id}`, { auth: false });
+        const result = await fetchApi(`/api/hotels/${id}`, { auth: false, signal: controller.signal });
         if (result.ok && result.data) {
           setHotel(result.data);
         } else {
           setError(result.message || '酒店不存在');
         }
       } catch {
+        if (controller.signal.aborted) return;
         setError('加载失败，请稍后重试');
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     };
     fetchHotel();
+    return () => controller.abort();
   }, [id]);
 
   const handleSubmit = async (formData: HotelFormData) => {

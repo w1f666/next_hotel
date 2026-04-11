@@ -1,15 +1,7 @@
 
-
-#### 数据 / 状态问题
-
-| # | 问题 | 位置 | 说明 |
-|---|------|------|------|
-|3、 | **游标分页双状态不同步** | list/page.tsx | `cursor` state 和 `cursorRef` 各自管理，部分代码只更新其一 |
-| 4、| **Calendar onChange + onConfirm 双重 setState** | hotels/[id]/page.tsx | `onChange` 和 `onConfirm` 都调 `setDateRange`，逻辑冗余 |
 |5、 | **房间图片 URL 双源冲突** | HotelForm.tsx | `roomImageUrls` state 与 `form.values.rooms[].imageUrl` 两份数据源，reset 时不同步 |
 |6、| **请求无 AbortController** | workspace/page.tsx 等 | 快速切换筛选条件时旧请求可能后到，导致数据错乱 |
-7、 **表单可双击提交** | publish/page.tsx | loading 状态下按钮未设 `disabled`，可重复提交 |
-
+项目中的serialize方法是做什么的
 
 
 

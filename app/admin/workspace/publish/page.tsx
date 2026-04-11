@@ -37,6 +37,7 @@ export default function PublishHotelPage() {
   }, [router, message]);
 
   const handleSubmit = async (formData: HotelFormData) => {
+    if(loading) return;
     setLoading(true);
     try {
       const result = await fetchApi('/api/hotels', {

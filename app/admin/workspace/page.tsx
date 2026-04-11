@@ -24,6 +24,7 @@ export default function WorkspacePage() {
   const [searchText, setSearchText] = useState('');
   const [debouncedSearchText, setDebouncedSearchText] = useState('');
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // 搜索防抖
   useEffect(() => {
@@ -41,23 +42,28 @@ export default function WorkspacePage() {
   }, [searchText]);
 
   const fetchHotels = useCallback(async () => {
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
     setLoading(true);
     try {
-      const result = await fetchApi('/api/merchant/hotels');
+      const result = await fetchApi('/api/merchant/hotels', { signal: controller.signal });
       if (result.ok) {
         setHotels(result.data || []);
       } else {
         message.error(result.message || '加载酒店列表失败');
       }
     } catch (err) {
+      if (controller.signal.aborted) return;
       message.error('加载酒店列表失败');
     } finally {
-      setLoading(false);
+      if (!controller.signal.aborted) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
     fetchHotels();
+    return () => { abortControllerRef.current?.abort(); };
   }, [fetchHotels]);
 
   const handleDelete = async (id: number) => {
