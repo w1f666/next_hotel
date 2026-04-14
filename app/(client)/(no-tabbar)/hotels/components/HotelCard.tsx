@@ -10,7 +10,7 @@ interface HotelCardProps {
   hotel: HotelListItem;
 }
 
-const HotelCard = memo(function HotelCard({ hotel }: HotelCardProps) {
+export default function HotelCard({ hotel }: HotelCardProps) {
   const starConfig = hotel.starRating >= 5
     ? { label: '奢华', scoreColor: 'text-amber-700', badge: 'bg-gradient-to-r from-amber-800/75 to-amber-600/75' }
     : hotel.starRating >= 4
@@ -99,8 +99,5 @@ const HotelCard = memo(function HotelCard({ hotel }: HotelCardProps) {
       </div>
     </Link>
   );
-});
+};
 
-HotelCard.displayName = 'HotelCard';
-
-export default HotelCard;
