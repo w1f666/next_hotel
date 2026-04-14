@@ -52,7 +52,6 @@ export async function POST(request: Request) {
     const token = signToken({ userId: user.id, username: user.username, role: user.role as 'merchant' | 'admin' });
     const csrfToken = generateCsrfToken();
 
-    // 通过 Set-Cookie 写入 HttpOnly cookie（token）+ 可读 cookie（csrf）
     const response = NextResponse.json({
       success: true,
       message: '登录成功',

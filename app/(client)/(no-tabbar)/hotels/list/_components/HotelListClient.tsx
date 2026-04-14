@@ -105,13 +105,6 @@ export default function HotelListClient({
     setKeywordInput(keyword);
   }, [keyword]);
 
-  const updateKeywordInUrl = useCallback((value: string) => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      updateUrl({ keyword: value || null });
-    }, 500);
-  }, []); 
-
   // ===== URL 更新工具函数 =====
   const updateUrl = useCallback((overrides: Record<string, string | null>) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -125,6 +118,13 @@ export default function HotelListClient({
     const qs = params.toString();
     router.replace(`/hotels/list${qs ? `?${qs}` : ''}`, { scroll: false });
   }, [searchParams, router]);
+
+  const updateKeywordInUrl = useCallback((value: string) => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      updateUrl({ keyword: value || null });
+    }, 500);
+  }, [updateUrl]); 
 
   // ===== 派生值 =====
   const nights = dateRange[1].diff(dateRange[0], 'day');
