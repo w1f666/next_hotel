@@ -82,8 +82,8 @@ model Booking {
   status      Int      @default(0)         // 0=待确认 1=已确认 2=已取消 3=已完成
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  room        HotelRoom @relation(fields: [roomId], references: [id])
-  hotel       Hotel     @relation(fields: [hotelId], references: [id])
+  room        HotelRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  hotel       Hotel     @relation(fields: [hotelId], references: [id], onDelete: Cascade)
 
   @@index([roomId])
   @@index([hotelId])

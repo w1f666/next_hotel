@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, updateTag } from 'next/cache';
 
 /**
  * PATCH /api/admin/hotels/:id/review — 审核酒店（通过/拒绝）
@@ -30,6 +30,8 @@ export async function PATCH(
         where: { id: hotelId },
         data: { status: 1, rejectReason: null },
       });
+      updateTag('hotels');
+      updateTag(`hotel-${hotelId}`);
       revalidatePath('/hotels');
       revalidatePath('/hotels/list');
       revalidatePath(`/hotels/${hotelId}`);
@@ -46,6 +48,8 @@ export async function PATCH(
         where: { id: hotelId },
         data: { status: 2, rejectReason: reason.trim() },
       });
+      updateTag('hotels');
+      updateTag(`hotel-${hotelId}`);
       revalidatePath('/hotels');
       revalidatePath('/hotels/list');
       revalidatePath(`/hotels/${hotelId}`);
@@ -82,6 +86,8 @@ export async function DELETE(
     }
 
     await prisma.hotel.delete({ where: { id: hotelId } });
+    updateTag('hotels');
+    updateTag(`hotel-${hotelId}`);
     revalidatePath('/hotels');
     revalidatePath('/hotels/list');
     revalidatePath(`/hotels/${hotelId}`);

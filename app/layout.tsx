@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { Suspense } from "react";
 import { ConfigProvider } from 'antd';
 import AntdRegistry from "@/lib/AntdRegistry";
 import zhCN from 'antd/locale/zh_CN';
@@ -30,19 +31,21 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <AntdRegistry>
-          <ConfigProvider
-            locale={zhCN}
-            theme={{
-              token: {
-                colorPrimary: '#0066FF',
-                borderRadius: 8,
-              },
-            }}
-          >
-            {children}
-          </ConfigProvider>
-        </AntdRegistry>
+        <Suspense>
+          <AntdRegistry>
+            <ConfigProvider
+              locale={zhCN}
+              theme={{
+                token: {
+                  colorPrimary: '#0066FF',
+                  borderRadius: 8,
+                },
+              }}
+            >
+              {children}
+            </ConfigProvider>
+          </AntdRegistry>
+        </Suspense>
       </body>
     </html>
   );

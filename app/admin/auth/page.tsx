@@ -238,10 +238,6 @@ export default function AdminAuthPage(){
       alignItems: 'center', 
       minHeight: '100vh', 
       background: '#f0f2f5',
-      backgroundImage: 'url("https://gw.alipayobjects.com/zos/rmsportal/TVYTbAXWheQpRcWDaDMu.svg")',
-      backgroundRepeat: 'no-repeat',
-      backgroundPosition: 'center 110px',
-      backgroundSize: '100%'
     }}>
       <Card 
         style={{ width: 400, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}

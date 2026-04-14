@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Table, Tag, Space, Button, Typography, Input, Empty, Card,
   Statistic, Row, Col, Popconfirm, message, Skeleton, Badge, Flex,
@@ -11,20 +11,25 @@ import {
   CloseCircleOutlined, EyeOutlined, ReloadOutlined
 } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
+import useSWR from 'swr';
 import type { Hotel } from '@/types';
 import { HOTEL_STATUS_MAP } from '@/types';
 import { fetchApi } from '@/lib/fetch-api';
 
 const { Title, Text, Paragraph } = Typography;
 
+const fetcher = async (url: string) => {
+  const result = await fetchApi(url);
+  if (!result.ok) throw new Error(result.message || '加载失败');
+  return (result.data || []) as Hotel[];
+};
+
 export default function WorkspacePage() {
   const router = useRouter();
-  const [hotels, setHotels] = useState<Hotel[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: hotels = [], isLoading: loading, mutate } = useSWR('/api/merchant/hotels', fetcher);
   const [searchText, setSearchText] = useState('');
   const [debouncedSearchText, setDebouncedSearchText] = useState('');
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const abortControllerRef = useRef<AbortController | null>(null);
 
   // 搜索防抖
   useEffect(() => {
@@ -41,37 +46,12 @@ export default function WorkspacePage() {
     };
   }, [searchText]);
 
-  const fetchHotels = useCallback(async () => {
-    abortControllerRef.current?.abort();
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-    setLoading(true);
-    try {
-      const result = await fetchApi('/api/merchant/hotels', { signal: controller.signal });
-      if (result.ok) {
-        setHotels(result.data || []);
-      } else {
-        message.error(result.message || '加载酒店列表失败');
-      }
-    } catch (err) {
-      if (controller.signal.aborted) return;
-      message.error('加载酒店列表失败');
-    } finally {
-      if (!controller.signal.aborted) setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchHotels();
-    return () => { abortControllerRef.current?.abort(); };
-  }, [fetchHotels]);
-
   const handleDelete = async (id: number) => {
     try {
       const result = await fetchApi(`/api/hotels/${id}`, { method: 'DELETE' });
       if (result.ok) {
         message.success('已删除');
-        fetchHotels();
+        mutate();
       } else {
         message.error(result.message || '删除失败');
       }
@@ -328,7 +308,7 @@ export default function WorkspacePage() {
               style={{ width: 240, borderRadius: 8 }}
               allowClear
             />
-            <Button icon={<ReloadOutlined />} onClick={fetchHotels}>
+            <Button icon={<ReloadOutlined />} onClick={() => mutate()}>
               刷新
             </Button>
           </Space>

@@ -1,7 +1,0 @@
-
-|5、 | **房间图片 URL 双源冲突** | HotelForm.tsx | `roomImageUrls` state 与 `form.values.rooms[].imageUrl` 两份数据源，reset 时不同步 |
-|6、| **请求无 AbortController** | workspace/page.tsx 等 | 快速切换筛选条件时旧请求可能后到，导致数据错乱 |
-项目中的serialize方法是做什么的
-
-
-

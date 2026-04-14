@@ -1,167 +1,49 @@
-"use client";
-import 'antd-mobile/es/global';
-import React, { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
-import { Toast, Skeleton, ErrorBlock, CalendarPicker } from "antd-mobile";
-import { unstableSetRender } from 'antd-mobile';
-import { createRoot, type Root } from 'react-dom/client';
-import HotelBanner from "./components/HotelBanner";
-import HotelInfo from "./components/HotelInfo";
-import RoomList from "./components/RoomList";
-import type { HotelWithRooms } from "@/types";
+import React from 'react';
+import { notFound } from 'next/navigation';
+import type { Metadata } from 'next';
+import { getHotelById, getPublishedHotels } from '@/lib/actions/hotel.actions';
+import HotelBanner from './components/HotelBanner';
+import HotelInfo from './components/HotelInfo';
+import DateRoomSection from './components/DateRoomSection';
 
-// --- React 19 兼容性补丁 ---
-unstableSetRender((node: React.ReactNode, container: Element | DocumentFragment) => {
-  const root: Root = createRoot(container as HTMLElement);
-  root.render(node);
-  return async () => {
-    root.unmount();
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const hotel = await getHotelById(Number(id));
+  if (!hotel) return { title: '酒店未找到' };
+  return {
+    title: `${hotel.name} - 易宿`,
+    description: `${hotel.name}，${hotel.starRating}星级，位于${hotel.address}，¥${hotel.minPrice}起`,
   };
-});
+}
 
-// --- 辅助函数 ---
-const getToday = () => {
-  const now = new Date();
-  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
-};
+export async function generateStaticParams() {
+  const hotels = await getPublishedHotels();
+  return hotels.map((h: { id: number }) => ({ id: String(h.id) }));
+}
 
-const formatDate = (date: Date) => {
-  if (!date) return '';
-  return `${date.getMonth() + 1}月${date.getDate()}日`;
-};
+export default async function HotelDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const hotel = await getHotelById(Number(id));
 
-const getNights = (start: Date, end: Date) => {
-  if (!start || !end) return 0;
-  const diff = end.getTime() - start.getTime();
-  return Math.ceil(diff / (1000 * 3600 * 24));
-};
-
-export default function HotelDetailPage() {
-  const [data, setData] = useState<HotelWithRooms | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-  
-  const [calendarVisible, setCalendarVisible] = useState(false);
-  
-  const [dateRange, setDateRange] = useState<[Date, Date]>(() => {
-    const today = getToday(); 
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    return [today, tomorrow];
-  });
-  
-  const params = useParams(); 
-  const hotelId = params?.id as string;
-
-  useEffect(() => {
-    const controller = new AbortController();
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch(`/api/hotels/${hotelId}`, { signal: controller.signal }); 
-        
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-
-        const result = await response.json();
-        if (result.success) {
-          setData(result.data);
-        } else {
-          throw new Error(result.message || '获取数据失败');
-        }
-      } catch (err) {
-        if (controller.signal.aborted) return;
-        console.error("Fetch hotel detail failed:", err);
-        setError(true);
-      } finally {
-        if (!controller.signal.aborted) setLoading(false);
-      }
-    };
-
-    if (hotelId) {
-      fetchData();
-    }
-    return () => controller.abort();
-  }, [hotelId]);
-
-  if (error) {
-    return <ErrorBlock status="default" title="加载失败" description="请检查网络或稍后再试" fullPage />;
-  }
-
-  if (loading) {
-    return (
-      <div className="bg-gray-50 min-h-screen">
-        <div className="h-12 bg-white" />
-        <Skeleton.Title animated className="!h-56 !mt-0 !w-full" />
-        <div className="p-4 space-y-4">
-           <Skeleton.Paragraph lineCount={3} animated />
-           <Skeleton.Paragraph lineCount={5} animated />
-        </div>
-      </div>
-    );
-  }
-
-  if (!data) return null;
+  if (!hotel) notFound();
 
   return (
     <div className="bg-[#f5f5f5] min-h-screen pb-safe">
-
-      <HotelBanner images={data.gallery || []} />
+      <HotelBanner images={hotel.gallery || []} />
 
       <main className="px-3 relative -mt-4 z-10 space-y-3 pb-8">
-        <HotelInfo hotel={data} />
+        <HotelInfo hotel={hotel} />
 
-        <div 
-          className="bg-white rounded-lg p-4 flex justify-between items-center shadow-sm active:bg-gray-50 transition-colors cursor-pointer"
-          onClick={() => setCalendarVisible(true)}
-        >
-            <div className="flex flex-col">
-                <div className="flex items-end gap-2">
-                    <span className="text-base font-bold text-gray-900">
-                      {formatDate(dateRange[0])}
-                    </span>
-                    <span className="text-xs text-gray-500 mb-0.5">入住</span>
-                    <span className="text-xs text-gray-300 mx-1">|</span>
-                    <span className="text-base font-bold text-gray-900">
-                      {formatDate(dateRange[1])}
-                    </span>
-                    <span className="text-xs text-gray-500 mb-0.5">离店</span>
-                </div>
-                <span className="text-xs text-gray-500 mt-1">
-                  共 {getNights(dateRange[0], dateRange[1])} 晚
-                </span>
-            </div>
-            <div className="flex items-center text-blue-600 text-sm font-medium">
-               <span>修改</span>
-               <span className="ml-1">›</span>
-            </div>
-        </div>
-
-        <div className="mt-2">
-           <RoomList rooms={data.rooms || []} hotelId={data.id} checkIn={dateRange[0]} checkOut={dateRange[1]} />
-        </div>
+        <DateRoomSection rooms={hotel.rooms || []} hotelId={hotel.id} />
       </main>
-
-      <CalendarPicker
-        selectionMode="range"
-        visible={calendarVisible}
-        value={dateRange}
-        min={getToday()}
-        onChange={(val: [Date, Date] | null) => {
-          if (val) {
-            setDateRange(val);
-          }
-        }}
-        onConfirm={(val: [Date, Date] | null) => {
-          if (!val) return;
-          setCalendarVisible(false);
-          Toast.show({
-            content: `已选择 ${getNights(val[0], val[1])} 晚`,
-          });
-        }}
-        onClose={() => setCalendarVisible(false)}
-      />
     </div>
   );
 }

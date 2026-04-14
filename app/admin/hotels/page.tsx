@@ -3,35 +3,26 @@
 'use client';
 
 // app/admin/hotels/page.tsx
-import { useEffect, useState, useCallback } from 'react';
-import { Typography, Space, Badge } from 'antd';
+import { Typography } from 'antd';
 import {
-  AuditOutlined, ClockCircleOutlined, CheckCircleOutlined,
+  ClockCircleOutlined, CheckCircleOutlined,
   CloseCircleOutlined, InboxOutlined,
 } from '@ant-design/icons';
+import useSWR from 'swr';
 import { fetchApi } from '@/lib/fetch-api';
 import HotelTableClient from '@/app/admin/hotels/_components/HotelTableClient'; 
 import type { HotelTableRow } from '@/types';
 
 const { Title, Text } = Typography;
 
+const fetcher = async (url: string) => {
+  const result = await fetchApi(url);
+  if (!result.ok) throw new Error(result.message || '加载失败');
+  return (result.data || []) as HotelTableRow[];
+};
+
 export default function AdminHotelsPage() {
-  const [hotels, setHotels] = useState<HotelTableRow[]>([]);
-  const [refreshKey, setRefreshKey] = useState(0);
-
-  // 刷新数据
-  const refreshData = useCallback(async () => {
-    const result = await fetchApi('/api/admin/hotels');
-    if (result.ok) {
-      setHotels(result.data || []);
-    }
-    setRefreshKey(prev => prev + 1);
-  }, []);
-
-  // 初始加载数据
-  useEffect(() => {
-    refreshData();
-  }, [refreshData]);
+  const { data: hotels = [], mutate } = useSWR('/api/admin/hotels', fetcher);
 
   // 统计
   const stats = {
@@ -79,10 +70,9 @@ export default function AdminHotelsPage() {
       </div>
       
       <HotelTableClient 
-        key={refreshKey}
-        initialData={hotels} 
-        onDeleted={refreshData}
-        onUpdated={refreshData}
+        initialData={hotels}
+        onDeleted={() => mutate()}
+        onUpdated={() => mutate()}
       />
     </div>
   );

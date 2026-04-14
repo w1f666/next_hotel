@@ -2,21 +2,24 @@
 
 import prisma from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
+import { cacheTag, cacheLife } from 'next/cache';
+import { updateTag } from 'next/cache';
 import { serializeHotel, serializeRoom } from '@/lib/serialize';
 import type { HotelFormData } from '@/types';
 
 
 /**
  * 获取C端酒店列表（已发布的酒店，用于客户端展示）
+ * 使用 'use cache' + cacheTag/cacheLife 替代 unstable_cache
  */
 export async function getPublishedHotels() {
+  'use cache';
+  cacheTag('hotels');
+  cacheLife({ revalidate: 120 });
+
   const hotels = await prisma.hotel.findMany({
-    where: {
-      status: 1, // 只获取已发布的酒店
-    },
-    orderBy: {
-      updatedAt: 'desc',
-    },
+    where: { status: 1 },
+    orderBy: { updatedAt: 'desc' },
   });
   return hotels.map(serializeHotel);
 }
@@ -143,8 +146,13 @@ export async function getAllHotels(params?: {
 
 /**
  * 获取酒店详情（含房型）—— 使用 include 单次查询
+ * 使用 'use cache' + cacheTag/cacheLife 替代 unstable_cache
  */
 export async function getHotelById(id: number) {
+  'use cache';
+  cacheTag('hotels', `hotel-${id}`);
+  cacheLife({ revalidate: 60 });
+
   const hotel = await prisma.hotel.findUnique({
     where: { id },
     include: {
@@ -203,6 +211,7 @@ export async function createHotel(merchantId: number, data: HotelFormData) {
     });
   }
 
+  updateTag('hotels');
   return serializeHotel(hotel);
 }
 
@@ -252,6 +261,8 @@ export async function updateHotel(hotelId: number, data: HotelFormData) {
     return updatedHotel;
   });
 
+  updateTag('hotels');
+  updateTag(`hotel-${hotelId}`);
   return serializeHotel(hotel);
 }
 
@@ -260,6 +271,8 @@ export async function updateHotel(hotelId: number, data: HotelFormData) {
  */
 export async function deleteHotel(hotelId: number) {
   await prisma.hotel.delete({ where: { id: hotelId } });
+  updateTag('hotels');
+  updateTag(`hotel-${hotelId}`);
   return true;
 }
 
