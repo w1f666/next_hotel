@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { revalidatePath } from 'next/cache';
-import { getHotelById, updateHotel, deleteHotel } from '@/lib/actions/hotel.actions';
-import prisma from '@/lib/prisma';
+import { revalidateHotelCache, revalidateHotelPaths } from '@/lib/actions/hotel.revalidation';
+import { getHotelById } from '@/lib/actions/hotel.queries';
+import { deleteHotelRecord, getHotelMerchantOwnerId, updateHotelRecord } from '@/lib/actions/hotel.write';
 
 /**
  * GET /api/hotels/:id — 公开接口，获取酒店详情（含房型）
@@ -60,8 +60,8 @@ export async function PUT(
 
     // IDOR 校验：merchant 只能修改自己的酒店
     if (userRole === 'merchant') {
-      const hotel = await prisma.hotel.findUnique({ where: { id: hotelId }, select: { merchantId: true } });
-      if (!hotel || hotel.merchantId !== userId) {
+      const merchantId = await getHotelMerchantOwnerId(hotelId);
+      if (!merchantId || merchantId !== userId) {
         return NextResponse.json({ success: false, message: '无权操作该酒店' }, { status: 403 });
       }
     }
@@ -75,13 +75,10 @@ export async function PUT(
       );
     }
 
-    const hotel = await updateHotel(hotelId, body);
+    const hotel = await updateHotelRecord(hotelId, body);
 
-    revalidatePath('/hotels');
-    revalidatePath('/hotels/list');
-    revalidatePath(`/hotels/${hotelId}`);
-    revalidatePath('/admin/workspace');
-    revalidatePath('/admin/hotels');
+    revalidateHotelCache({ hotelId, merchantId: hotel.merchantId });
+    revalidateHotelPaths(hotelId);
 
     return NextResponse.json({
       success: true,
@@ -120,19 +117,16 @@ export async function DELETE(
 
     // IDOR 校验：merchant 只能删除自己的酒店，admin 可以删除任意酒店
     if (userRole === 'merchant') {
-      const hotel = await prisma.hotel.findUnique({ where: { id: hotelId }, select: { merchantId: true } });
-      if (!hotel || hotel.merchantId !== userId) {
+      const merchantId = await getHotelMerchantOwnerId(hotelId);
+      if (!merchantId || merchantId !== userId) {
         return NextResponse.json({ success: false, message: '无权操作该酒店' }, { status: 403 });
       }
     }
 
-    await deleteHotel(hotelId);
+    const deletedHotel = await deleteHotelRecord(hotelId);
 
-    revalidatePath('/hotels');
-    revalidatePath('/hotels/list');
-    revalidatePath(`/hotels/${hotelId}`);
-    revalidatePath('/admin/workspace');
-    revalidatePath('/admin/hotels');
+    revalidateHotelCache({ hotelId, merchantId: deletedHotel.merchantId });
+    revalidateHotelPaths(hotelId);
 
     return NextResponse.json({ success: true, message: '酒店已删除' });
   } catch (error) {

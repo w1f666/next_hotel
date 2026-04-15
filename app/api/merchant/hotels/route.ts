@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getHotelsByMerchant } from '@/lib/actions/hotel.actions';
+import { getHotelsByMerchant } from '@/lib/actions/hotel.queries';
 
 /**
  * GET /api/merchant/hotels — 获取当前商户的酒店列表（需认证）

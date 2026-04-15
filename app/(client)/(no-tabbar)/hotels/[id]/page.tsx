@@ -1,7 +1,7 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import { getHotelById, getPublishedHotels } from '@/lib/actions/hotel.actions';
+import { getHotelById, getPublishedHotels } from '@/lib/actions/hotel.queries';
 import HotelBanner from './components/HotelBanner';
 import HotelInfo from './components/HotelInfo';
 import DateRoomSection from './components/DateRoomSection';

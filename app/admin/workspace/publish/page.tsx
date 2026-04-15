@@ -4,9 +4,10 @@ import React, { useState, useEffect } from 'react';
 import { Typography, Breadcrumb, Button, Space, Spin, App } from 'antd';
 import { ArrowLeftOutlined, HomeOutlined, EditOutlined } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
+import { mutate } from 'swr';
 import HotelForm from '../_components/HotelForm';
 import type { HotelFormData } from '@/types';
-import { fetchApi } from '@/lib/fetch-api';
+import { createHotelAction } from '@/lib/actions/hotel.mutations';
 
 const { Title, Paragraph } = Typography;
 
@@ -40,15 +41,17 @@ export default function PublishHotelPage() {
     if(loading) return;
     setLoading(true);
     try {
-      const result = await fetchApi('/api/hotels', {
-        method: 'POST',
-        body: JSON.stringify(formData),
-      });
+      const result = await createHotelAction(formData);
 
       if (!result.ok) {
         message.error(result.message || '提交失败');
         return;
       }
+
+      await Promise.all([
+        mutate('/api/merchant/hotels'),
+        mutate('/api/admin/hotels'),
+      ]);
 
       message.success('🎉 酒店信息已提交，等待审核');
       router.push('/admin/workspace');

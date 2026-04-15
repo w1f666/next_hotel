@@ -15,6 +15,7 @@ import useSWR from 'swr';
 import type { Hotel } from '@/types';
 import { HOTEL_STATUS_MAP } from '@/types';
 import { fetchApi } from '@/lib/fetch-api';
+import { deleteHotelAction } from '@/lib/actions/hotel.mutations';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -48,10 +49,10 @@ export default function WorkspacePage() {
 
   const handleDelete = async (id: number) => {
     try {
-      const result = await fetchApi(`/api/hotels/${id}`, { method: 'DELETE' });
+      const result = await deleteHotelAction(id);
       if (result.ok) {
+        await mutate();
         message.success('已删除');
-        mutate();
       } else {
         message.error(result.message || '删除失败');
       }

@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { StarFilled, EnvironmentOutlined, RightOutlined } from '@ant-design/icons';
-import { getPublishedHotels } from '@/lib/actions/hotel.actions';
+import { getPublishedHotels } from '@/lib/actions/hotel.queries';
 import SearchSection from './_components/SearchSection';
 import type { Metadata } from 'next';
 
@@ -11,12 +11,81 @@ export const metadata: Metadata = {
   description: '发现和预订全国优质酒店，享受超值优惠',
 };
 
-export default async function HotelSearchPage() {
+/* ── PPR: 异步酒店列表组件，包裹在 Suspense 中实现流式渲染 ── */
+async function HotelGrid() {
   const hotels = await getPublishedHotels();
 
+  if (hotels.length === 0) {
+    return <div className="text-center text-gray-400 py-10">暂无酒店数据</div>;
+  }
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+      {hotels.map((hotel) => (
+        <Link href={`/hotels/${hotel.id}`} key={hotel.id}>
+          <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer h-full">
+            <div className="relative h-40">
+              <Image
+                src={hotel.coverImage || '/hotel_img/hotel1.png'}
+                alt={hotel.name}
+                fill
+                className="object-cover"
+              />
+            </div>
+            <div className="p-4">
+              <div className="flex justify-between items-start">
+                <span className="text-base font-semibold truncate">{hotel.name}</span>
+                <span className="text-red-500 font-bold text-lg flex-shrink-0 ml-2">
+                  ¥{hotel.minPrice}
+                  <span className="text-xs font-normal text-gray-400">起</span>
+                </span>
+              </div>
+              <div className="flex items-center gap-1 text-gray-500 text-sm mt-2 mb-1">
+                <EnvironmentOutlined />
+                <span className="truncate">{hotel.address}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: hotel.starRating }, (_, i) => (
+                  <StarFilled key={i} className="text-yellow-400 text-xs" />
+                ))}
+              </div>
+            </div>
+          </div>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+/* ── PPR: 骨架屏，静态 shell 先行渲染 ── */
+function HotelGridSkeleton() {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+      {[1, 2, 3].map(i => (
+        <div key={i} className="bg-white rounded-lg overflow-hidden shadow-sm animate-pulse">
+          <div className="h-40 bg-gray-200" />
+          <div className="p-4 space-y-2">
+            <div className="flex justify-between">
+              <div className="h-4 bg-gray-200 rounded w-2/3" />
+              <div className="h-4 bg-gray-200 rounded w-12" />
+            </div>
+            <div className="h-3 bg-gray-100 rounded w-3/4" />
+            <div className="flex gap-1">
+              {[1, 2, 3].map(j => (
+                <div key={j} className="w-3 h-3 bg-gray-100 rounded" />
+              ))}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export default function HotelSearchPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col pb-10">
-      {/* 顶部 Banner */}
+      {/* 顶部 Banner — 静态内容，PPR 立即渲染 */}
       <div className="relative w-full h-48 sm:h-60 bg-blue-600 overflow-hidden">
         <Image
           src="/hotel_img/hotel1.png"
@@ -33,53 +102,18 @@ export default async function HotelSearchPage() {
         </div>
       </div>
 
-      {/* 搜索区域 (客户端组件) */}
+      {/* 搜索区域 (客户端组件) — PPR 立即渲染 */}
       <SearchSection />
 
-      {/* 热门酒店列表 (服务端渲染) */}
+      {/* 热门酒店列表 — PPR: Suspense 边界，数据流式传输 */}
       <div className="mt-8 px-4 max-w-4xl mx-auto w-full">
         <h4 className="text-lg font-bold mb-4">热门酒店</h4>
-        {hotels.length === 0 ? (
-          <div className="text-center text-gray-400 py-10">暂无酒店数据</div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {hotels.map((hotel) => (
-              <Link href={`/hotels/${hotel.id}`} key={hotel.id}>
-                <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer h-full">
-                  <div className="relative h-40">
-                    <Image
-                      src={hotel.coverImage || '/hotel_img/hotel1.png'}
-                      alt={hotel.name}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                  <div className="p-4">
-                    <div className="flex justify-between items-start">
-                      <span className="text-base font-semibold truncate">{hotel.name}</span>
-                      <span className="text-red-500 font-bold text-lg flex-shrink-0 ml-2">
-                        ¥{hotel.minPrice}
-                        <span className="text-xs font-normal text-gray-400">起</span>
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1 text-gray-500 text-sm mt-2 mb-1">
-                      <EnvironmentOutlined />
-                      <span className="truncate">{hotel.address}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      {Array.from({ length: hotel.starRating }, (_, i) => (
-                        <StarFilled key={i} className="text-yellow-400 text-xs" />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
+        <Suspense fallback={<HotelGridSkeleton />}>
+          <HotelGrid />
+        </Suspense>
       </div>
 
-      {/* 底部功能区 */}
+      {/* 底部功能区 — 静态内容，PPR 立即渲染 */}
       <div className="mt-8 px-4 max-w-2xl mx-auto w-full grid grid-cols-2 gap-4">
         <div className="bg-white p-4 rounded-xl shadow-sm flex items-center justify-between cursor-pointer hover:shadow-md transition-shadow">
           <div>

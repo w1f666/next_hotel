@@ -167,7 +167,13 @@ export default function HotelListClient({
     },
     fetcher,
     {
-      revalidateFirstPage: false,
+      dedupingInterval: 5000,
+      refreshInterval: 30000,
+      revalidateOnMount: true,
+      revalidateIfStale: true,
+      revalidateFirstPage: true,
+      revalidateOnFocus: true,
+      revalidateOnReconnect: true,
       fallbackData: fallbackData ? [fallbackData] : undefined,
     },
   );
@@ -182,19 +188,20 @@ export default function HotelListClient({
     }
   }, [searchParams, setSize]);
 
-  // 派生数据
-  const hotels: HotelListItem[] = data
-    ? data.flatMap(page =>
-        (page.data || []).map((h: any) => ({
-          id: h.id, name: h.name, address: h.address, starRating: h.starRating,
-          minPrice: h.minPrice, coverImage: h.coverImage,
-          facilities: h.facilities || [], latitude: h.latitude ?? null,
-          longitude: h.longitude ?? null, createdAt: h.createdAt,
-        }))
-      )
-    : [];
-  // 去重
-  const uniqueHotels = Array.from(new Map(hotels.map(h => [h.id, h])).values());
+  // 派生数据（使用 useMemo 避免每次渲染都重新计算）
+  const uniqueHotels = useMemo(() => {
+    const hotels: HotelListItem[] = data
+      ? data.flatMap(page =>
+          (page.data || []).map((h: any) => ({
+            id: h.id, name: h.name, address: h.address, starRating: h.starRating,
+            minPrice: h.minPrice, coverImage: h.coverImage,
+            facilities: h.facilities || [], latitude: h.latitude ?? null,
+            longitude: h.longitude ?? null, createdAt: h.createdAt,
+          }))
+        )
+      : [];
+    return Array.from(new Map(hotels.map(h => [h.id, h])).values());
+  }, [data]);
   const hasMore = data ? data[data.length - 1]?.hasMore === true : false;
   const isLoadingMore = size > 1 && data && typeof data[size - 1] === 'undefined';
 

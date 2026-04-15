@@ -6,12 +6,12 @@ import type { ColumnsType } from 'antd/es/table';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EnvironmentOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
 import type { HotelTableRow } from '@/types';
 import { HOTEL_STATUS_MAP } from '@/types';
-import { fetchApi } from '@/lib/fetch-api';
+import { deleteHotelAction, reviewHotelAction } from '@/lib/actions/hotel.mutations';
 
 interface Props {
   initialData: HotelTableRow[];
-  onDeleted?: () => void;  // 删除后回调，用于刷新数据
-  onUpdated?: () => void;  // 审核操作后刷新数据
+  onDeleted?: () => unknown | Promise<unknown>;  // 删除后回调，用于刷新数据
+  onUpdated?: () => unknown | Promise<unknown>;  // 审核操作后刷新数据
 }
 
 export default function HotelTableClient({ initialData, onDeleted, onUpdated }: Props) {
@@ -25,10 +25,10 @@ export default function HotelTableClient({ initialData, onDeleted, onUpdated }: 
   const handleDelete = async (id: number) => {
     setLoadingId(id);
     try {
-      const result = await fetchApi(`/api/admin/hotels/${id}/review`, { method: 'DELETE' });
+      const result = await deleteHotelAction(id);
       if (result.ok) {
+        await onDeleted?.();
         message.success('删除成功');
-        onDeleted?.();
       } else {
         message.error(result.message || '删除失败');
       }
@@ -43,13 +43,10 @@ export default function HotelTableClient({ initialData, onDeleted, onUpdated }: 
   const handleApprove = async (id: number) => {
     setLoadingId(id);
     try {
-      const result = await fetchApi(`/api/admin/hotels/${id}/review`, {
-        method: 'PATCH',
-        body: JSON.stringify({ action: 'approve' }),
-      });
+      const result = await reviewHotelAction(id, 'approve');
       if (result.ok) {
+        await onUpdated?.();
         message.success('审核通过');
-        onUpdated?.();
       } else {
         message.error(result.message || '操作失败');
       }
@@ -77,15 +74,12 @@ export default function HotelTableClient({ initialData, onDeleted, onUpdated }: 
 
     setLoadingId(currentRejectId);
     try {
-      const result = await fetchApi(`/api/admin/hotels/${currentRejectId}/review`, {
-        method: 'PATCH',
-        body: JSON.stringify({ action: 'reject', reason: rejectReason.trim() }),
-      });
+      const result = await reviewHotelAction(currentRejectId, 'reject', rejectReason.trim());
       if (result.ok) {
+        await onUpdated?.();
         message.success('已拒绝');
         setRejectModalVisible(false);
         setRejectReason('');
-        onUpdated?.();
       } else {
         message.error(result.message || '操作失败');
       }

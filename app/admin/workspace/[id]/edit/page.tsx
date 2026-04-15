@@ -1,7 +1,7 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import { getHotelById } from '@/lib/actions/hotel.actions';
+import { getHotelById } from '@/lib/actions/hotel.queries';
 import EditHotelClient from './_components/EditHotelClient';
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {

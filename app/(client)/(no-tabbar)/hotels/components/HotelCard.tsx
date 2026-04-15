@@ -10,7 +10,7 @@ interface HotelCardProps {
   hotel: HotelListItem;
 }
 
-export default function HotelCard({ hotel }: HotelCardProps) {
+function HotelCard({ hotel }: HotelCardProps) {
   const starConfig = hotel.starRating >= 5
     ? { label: '奢华', scoreColor: 'text-amber-700', badge: 'bg-gradient-to-r from-amber-800/75 to-amber-600/75' }
     : hotel.starRating >= 4
@@ -22,7 +22,7 @@ export default function HotelCard({ hotel }: HotelCardProps) {
   const score = (hotel.starRating * 0.8 + 1.2).toFixed(1);
 
   return (
-    <Link href={`/hotels/${hotel.id}`} prefetch={false}>
+    <Link href={`/hotels/${hotel.id}`} prefetch={false} className="contents">
       <div className="mb-3.5 bg-white rounded-2xl overflow-hidden shadow-[0_1px_10px_rgba(0,0,0,0.05)] active:shadow-[0_1px_4px_rgba(0,0,0,0.08)] active:scale-[0.988] transition-all duration-200">
         {/* 上方大图区域 */}
         <div className="relative w-full h-[180px] overflow-hidden">
@@ -99,5 +99,7 @@ export default function HotelCard({ hotel }: HotelCardProps) {
       </div>
     </Link>
   );
-};
+}
+
+export default memo(HotelCard);
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { revalidatePath } from 'next/cache';
-import { getAllHotels, getPublishedHotels, createHotel } from '@/lib/actions/hotel.actions';
+import { revalidateHotelCache, revalidateHotelPaths } from '@/lib/actions/hotel.revalidation';
+import { getAllHotels, getPublishedHotels } from '@/lib/actions/hotel.queries';
+import { createHotelRecord } from '@/lib/actions/hotel.write';
 
 /**
  * GET /api/hotels — 公开接口，获取酒店列表
@@ -106,12 +107,10 @@ export async function POST(req: NextRequest) {
     }
 
     // merchantId 从 token 获取，不再信任客户端
-    const hotel = await createHotel(userId, formData);
+    const hotel = await createHotelRecord(userId, formData);
 
-    revalidatePath('/hotels');
-    revalidatePath('/hotels/list');
-    revalidatePath('/admin/workspace');
-    revalidatePath('/admin/hotels');
+    revalidateHotelCache({ hotelId: hotel.id, merchantId: userId });
+    revalidateHotelPaths(hotel.id);
 
     return NextResponse.json(
       { success: true, message: '酒店信息已保存，等待审核', data: hotel },

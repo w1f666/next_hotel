@@ -8,7 +8,7 @@ import {
   ClockCircleOutlined, CheckCircleOutlined,
   CloseCircleOutlined, InboxOutlined,
 } from '@ant-design/icons';
-import useSWR from 'swr';
+import useSWR, { mutate as globalMutate } from 'swr';
 import { fetchApi } from '@/lib/fetch-api';
 import HotelTableClient from '@/app/admin/hotels/_components/HotelTableClient'; 
 import type { HotelTableRow } from '@/types';
@@ -71,8 +71,22 @@ export default function AdminHotelsPage() {
       
       <HotelTableClient 
         initialData={hotels}
-        onDeleted={() => mutate()}
-        onUpdated={() => mutate()}
+        onDeleted={() => {
+          mutate();
+          globalMutate(
+            (key: unknown) => typeof key === 'string' && key.startsWith('/api/hotels?'),
+            undefined,
+            { revalidate: true },
+          );
+        }}
+        onUpdated={() => {
+          mutate();
+          globalMutate(
+            (key: unknown) => typeof key === 'string' && key.startsWith('/api/hotels?'),
+            undefined,
+            { revalidate: true },
+          );
+        }}
       />
     </div>
   );

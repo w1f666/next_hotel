@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
-import { serializeHotel } from '@/lib/serialize';
+import { getAdminHotels } from '@/lib/actions/hotel.queries';
 
 /**
  * GET /api/admin/hotels — 管理员获取所有酒店列表（需认证）
@@ -17,13 +16,9 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: false, message: '无权访问' }, { status: 403 });
     }
 
-    const hotels = await prisma.hotel.findMany({
-      orderBy: { updatedAt: 'desc' },
-    });
-
     return NextResponse.json({
       success: true,
-      data: hotels.map(serializeHotel),
+      data: await getAdminHotels(),
     });
   } catch (error) {
     console.error('[GET /api/admin/hotels]', error);

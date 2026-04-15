@@ -8,10 +8,11 @@ import {
   ArrowLeftOutlined, HomeOutlined, FormOutlined,
 } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
+import { mutate } from 'swr';
 import HotelForm from '@/app/admin/workspace/_components/HotelForm';
 import type { HotelFormData, HotelWithRooms } from '@/types';
 import { HOTEL_STATUS_MAP } from '@/types';
-import { fetchApi } from '@/lib/fetch-api';
+import { updateHotelAction } from '@/lib/actions/hotel.mutations';
 
 const { Title, Paragraph } = Typography;
 
@@ -25,15 +26,22 @@ export default function EditHotelClient({ hotel }: { hotel: HotelWithRooms }) {
   const handleSubmit = async (formData: HotelFormData) => {
     setSubmitting(true);
     try {
-      const result = await fetchApi(`/api/hotels/${hotel.id}`, {
-        method: 'PUT',
-        body: JSON.stringify(formData),
-      });
+      const result = await updateHotelAction(hotel.id, formData);
 
       if (!result.ok) {
         message.error(result.message || '保存失败');
         return;
       }
+
+      await Promise.all([
+        mutate('/api/merchant/hotels'),
+        mutate('/api/admin/hotels'),
+        mutate(
+          (key: unknown) => typeof key === 'string' && key.startsWith('/api/hotels?'),
+          undefined,
+          { revalidate: true },
+        ),
+      ]);
 
       message.success('✅ 酒店信息已更新，等待重新审核');
       router.push('/admin/workspace');

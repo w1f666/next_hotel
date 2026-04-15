@@ -21,8 +21,14 @@ unstableSetRender((node: React.ReactNode, container: Element | DocumentFragment)
 });
 
 const getToday = () => {
-  const now = new Date();
-  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+};
+
+const getNextDay = (date: Date) => {
+    const nextDay = new Date(date);
+    nextDay.setDate(nextDay.getDate() + 1);
+    return nextDay;
 };
 
 const formatDate = (date: Date) => {
@@ -69,15 +75,19 @@ export default function SearchSection() {
     const cityPickerRef = useRef<HTMLDivElement>(null);
     const [keyword, setKeyword] = useState('');
     const [calendarVisible, setCalendarVisible] = useState(false);
-    const [dateRange, setDateRange] = useState<[Date, Date]>(() => {
-        const today = getToday();
-        const tomorrow = new Date(today);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        return [today, tomorrow];
-    });
+    const [minDate, setMinDate] = useState<Date | null>(null);
+    const [dateRange, setDateRange] = useState<[Date, Date] | null>(null);
     const [priceFilter, setPriceFilter] = useState<string>('all');
+    const [mounted, setMounted] = useState(false);
 
-    const nights = getNights(dateRange[0], dateRange[1]);
+    const nights = dateRange ? getNights(dateRange[0], dateRange[1]) : 0;
+
+    useEffect(() => {
+        const today = getToday();
+        setMinDate(today);
+        setDateRange([today, getNextDay(today)]);
+        setMounted(true);
+    }, []);
 
     // 点击外部关闭城市选择器
     useEffect(() => {
@@ -92,6 +102,11 @@ export default function SearchSection() {
     }, [cityPickerVisible]);
 
     const handleSearch = () => {
+        if (!dateRange) {
+            Toast.show({ content: '日期初始化中，请稍后重试' });
+            return;
+        }
+
         const params = new URLSearchParams();
         if (keyword) params.set('keyword', keyword);
         if (city) params.set('city', city);
@@ -103,6 +118,14 @@ export default function SearchSection() {
         const queryString = params.toString();
         router.push(`/hotels/list${queryString ? `?${queryString}` : ''}`);
     };
+
+    if (!mounted) {
+        return (
+            <div className="relative px-4 -mt-10 sm:-mt-12 max-w-2xl mx-auto w-full z-20">
+                <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl p-4 sm:p-6 border border-white/40 h-[420px] animate-pulse" />
+            </div>
+        );
+    }
 
     return (
         <div className="relative px-4 -mt-10 sm:-mt-12 max-w-2xl mx-auto w-full z-20">
@@ -164,18 +187,20 @@ export default function SearchSection() {
                     >
                         <div className="flex items-end gap-2 py-2">
                             <span className="text-base font-bold text-gray-900">
-                                {formatDate(dateRange[0])}
+                                {dateRange ? formatDate(dateRange[0]) : '--'}
                             </span>
                             <span className="text-xs text-gray-500 mb-0.5">入住</span>
                             <span className="text-xs text-gray-300 mx-1">|</span>
                             <span className="text-base font-bold text-gray-900">
-                                {formatDate(dateRange[1])}
+                                {dateRange ? formatDate(dateRange[1]) : '--'}
                             </span>
                             <span className="text-xs text-gray-500 mb-0.5">离店</span>
                         </div>
                         <div className="flex justify-between items-center mt-1">
                             <span className="text-xs text-gray-400">
-                                {formatDate(dateRange[0])} 入住 - {formatDate(dateRange[1])} 离店
+                                {dateRange
+                                    ? `${formatDate(dateRange[0])} 入住 - ${formatDate(dateRange[1])} 离店`
+                                    : '请选择入住和离店日期'}
                             </span>
                             <span className="text-xs font-semibold text-gray-600 bg-gray-100 px-2 py-0.5 rounded-full">共{nights}晚</span>
                         </div>
@@ -229,8 +254,8 @@ export default function SearchSection() {
             <CalendarPicker
                 selectionMode="range"
                 visible={calendarVisible}
-                value={dateRange}
-                min={getToday()}
+                value={dateRange ?? undefined}
+                min={minDate ?? undefined}
                 onChange={(val: [Date, Date] | null) => {
                     if (val) setDateRange(val);
                 }}

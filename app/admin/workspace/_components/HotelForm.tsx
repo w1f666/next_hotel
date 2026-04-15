@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Form, Input, Select, DatePicker, InputNumber, Switch, Button,
   Card, Space, Divider, Tag, Typography, Row, Col, message, Tooltip,
@@ -126,7 +126,14 @@ const HotelForm: React.FC<HotelFormProps> = ({ initialData, onSubmit, loading, m
     setGalleryUrls(newGalleryUrls);
     form.setFieldsValue({ gallery: newGalleryUrls.join('\n') });
   };
-
+    // create 模式下每次挂载重置表单，防止 Next.js 路由缓存导致残留旧数据
+  useEffect(() => {
+    if (mode === 'create') {
+      form.resetFields();
+      setCoverImageUrl('');
+      setGalleryUrls([]);
+    }
+  }, [mode, form]);
   // 图片预览
   const handlePreview = (url: string) => {
     setPreviewImage(url);
