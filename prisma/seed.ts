@@ -36,10 +36,10 @@ async function main() {
   console.log('👤 用户创建成功: merchant01, admin01');
 
   const coverImages = [
-    '/hotel_img/hotel1.png',
-    '/hotel_img/hotel2.png',
-    '/hotel_img/hotel3.png',
-    '/hotel_img/hotel4.png',
+    '/hotel_img/hotel1.webp',
+    '/hotel_img/hotel2.webp',
+    '/hotel_img/hotel3.webp',
+    '/hotel_img/hotel4.webp',
   ];
 
   const roomImages = [
@@ -263,11 +263,11 @@ async function main() {
       minPrice: 936.00,
       openingTime: new Date('2020-01-01'),
       facilities: ['免费WiFi', '免费停车', '健身房', '游泳池', '餐厅', '会议室'],
-      coverImage: '/hotel_img/hotel1.png',
+      coverImage: '/hotel_img/hotel1.webp',
       gallery: [
-        '/hotel_img/hotel1.png',
-        '/hotel_img/hotel2.png',
-        '/hotel_img/hotel3.png',
+        '/hotel_img/hotel1.webp',
+        '/hotel_img/hotel2.webp',
+        '/hotel_img/hotel3.webp',
       ],
       latitude: 31.2357,
       longitude: 121.5048,
@@ -285,10 +285,10 @@ async function main() {
       minPrice: 199.00,
       openingTime: new Date('2021-05-10'),
       facilities: ['免费WiFi', '免费停车', '机器人服务', '自助早餐'],
-      coverImage: '/hotel_img/hotel2.png',
+      coverImage: '/hotel_img/hotel2.webp',
       gallery: [
-        '/hotel_img/hotel2.png',
-        '/hotel_img/hotel4.png',
+        '/hotel_img/hotel2.webp',
+        '/hotel_img/hotel4.webp',
       ],
       latitude: 31.2292,
       longitude: 121.5120,
@@ -306,10 +306,10 @@ async function main() {
       minPrice: 1200.00,
       openingTime: new Date('2022-01-01'),
       facilities: ['免费WiFi', '免费停车', '健身房', '游泳池', 'SPA', '行政酒廊'],
-      coverImage: '/hotel_img/hotel3.png',
+      coverImage: '/hotel_img/hotel3.webp',
       gallery: [
-        '/hotel_img/hotel3.png',
-        '/hotel_img/hotel1.png',
+        '/hotel_img/hotel3.webp',
+        '/hotel_img/hotel1.webp',
       ],
       latitude: 31.2296,
       longitude: 121.4505,
@@ -327,11 +327,11 @@ async function main() {
       minPrice: 2500.00,
       openingTime: new Date('2019-06-01'),
       facilities: ['免费WiFi', '免费停车', '健身房', '游泳池', '餐厅', '酒吧'],
-      coverImage: '/hotel_img/hotel4.png',
+      coverImage: '/hotel_img/hotel4.webp',
       gallery: [
-        '/hotel_img/hotel4.png',
-        '/hotel_img/hotel2.png',
-        '/hotel_img/hotel3.png',
+        '/hotel_img/hotel4.webp',
+        '/hotel_img/hotel2.webp',
+        '/hotel_img/hotel3.webp',
       ],
       latitude: 31.2522,
       longitude: 121.4893,

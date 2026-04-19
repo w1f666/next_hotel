@@ -27,7 +27,7 @@ function HotelCard({ hotel }: HotelCardProps) {
         {/* 上方大图区域 */}
         <div className="relative w-full h-[180px] overflow-hidden">
           <Image
-            src={hotel.coverImage || '/hotel_img/hotel1.png'}
+            src={hotel.coverImage || '/hotel_img/hotel1.webp'}
             alt={hotel.name}
             fill
             sizes="(max-width: 768px) 100vw, 400px"

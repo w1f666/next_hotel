@@ -17,13 +17,14 @@ const CITIES_MAP: Record<string, string> = {
 async function HotelListWithData({
   searchParams,
 }: {
-  searchParams: { [key: string]: string | string[] | undefined };
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  const keyword = typeof searchParams.keyword === 'string' ? searchParams.keyword : undefined;
-  const city = typeof searchParams.city === 'string' ? searchParams.city : undefined;
-  const price = typeof searchParams.price === 'string' ? searchParams.price : undefined;
-  const starsParam = typeof searchParams.stars === 'string' ? searchParams.stars : undefined;
-  const facilitiesParam = typeof searchParams.facilities === 'string' ? searchParams.facilities : undefined;
+  const resolvedParams = await searchParams;
+  const keyword = typeof resolvedParams.keyword === 'string' ? resolvedParams.keyword : undefined;
+  const city = typeof resolvedParams.city === 'string' ? resolvedParams.city : undefined;
+  const price = typeof resolvedParams.price === 'string' ? resolvedParams.price : undefined;
+  const starsParam = typeof resolvedParams.stars === 'string' ? resolvedParams.stars : undefined;
+  const facilitiesParam = typeof resolvedParams.facilities === 'string' ? resolvedParams.facilities : undefined;
 
   let minPrice: number | undefined;
   let maxPrice: number | undefined;
@@ -120,11 +121,9 @@ export default async function HotelListPage({
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  const params = await searchParams;
-
   return (
     <Suspense fallback={<HotelListSkeleton />}>
-      <HotelListWithData searchParams={params} />
+      <HotelListWithData searchParams={searchParams} />
     </Suspense>
   );
 }

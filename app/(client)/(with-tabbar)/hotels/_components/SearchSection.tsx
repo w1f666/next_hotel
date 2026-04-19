@@ -2,7 +2,8 @@
 
 import 'antd-mobile/es/global';
 import React, { useState, useRef, useEffect } from 'react';
-import { Tabs, Input, Select, Button, Tag } from 'antd';
+import { Tabs, Input, Select, Button, Tag, ConfigProvider } from 'antd';
+import zhCN from 'antd/locale/zh_CN';
 import { CalendarPicker, Toast } from 'antd-mobile';
 import { unstableSetRender } from 'antd-mobile';
 import { createRoot, type Root } from 'react-dom/client';
@@ -128,6 +129,7 @@ export default function SearchSection() {
     }
 
     return (
+        <ConfigProvider locale={zhCN} theme={{ cssVar: { prefix: 'antd', key: 'app' }, token: { colorPrimary: '#0066FF', borderRadius: 8 } }}>
         <div className="relative px-4 -mt-10 sm:-mt-12 max-w-2xl mx-auto w-full z-20">
             <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl p-4 sm:p-6 border border-white/40 overflow-hidden">
                 <Tabs
@@ -267,5 +269,6 @@ export default function SearchSection() {
                 onClose={() => setCalendarVisible(false)}
             />
         </div>
+        </ConfigProvider>
     );
 }

@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Button, Modal, InputNumber } from 'antd';
+import { Button, Modal, InputNumber, ConfigProvider } from 'antd';
+import zhCN from 'antd/locale/zh_CN';
 import { STAR_RATING_OPTIONS, FACILITY_OPTIONS } from '@/types';
 
 export const PRICE_RANGES = [
@@ -78,6 +79,7 @@ export default function FilterModal({
   };
 
   return (
+    <ConfigProvider locale={zhCN} theme={{ cssVar: { prefix: 'antd', key: 'app' }, token: { colorPrimary: '#0066FF', borderRadius: 8 } }}>
     <Modal
       open={visible}
       title={null}
@@ -258,5 +260,6 @@ export default function FilterModal({
         </Button>
       </div>
     </Modal>
+    </ConfigProvider>
   );
 }

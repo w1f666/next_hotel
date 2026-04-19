@@ -19,41 +19,56 @@ async function HotelGrid() {
     return <div className="text-center text-gray-400 py-10">暂无酒店数据</div>;
   }
 
+  const displayHotels = hotels.slice(0, 6);
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-      {hotels.map((hotel) => (
-        <Link href={`/hotels/${hotel.id}`} key={hotel.id}>
-          <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer h-full">
-            <div className="relative h-40">
-              <Image
-                src={hotel.coverImage || '/hotel_img/hotel1.png'}
-                alt={hotel.name}
-                fill
-                className="object-cover"
-              />
+    <>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        {displayHotels.map((hotel) => (
+          <Link href={`/hotels/${hotel.id}`} key={hotel.id}>
+            <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer h-full">
+              <div className="relative h-40">
+                <Image
+                  src={hotel.coverImage || '/hotel_img/hotel1.webp'}
+                  alt={hotel.name}
+                  fill
+                  sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw"
+                  className="object-cover"
+                />
+              </div>
+              <div className="p-4">
+                <div className="flex justify-between items-start">
+                  <span className="text-base font-semibold truncate">{hotel.name}</span>
+                  <span className="text-red-500 font-bold text-lg flex-shrink-0 ml-2">
+                    ¥{hotel.minPrice}
+                    <span className="text-xs font-normal text-gray-400">起</span>
+                  </span>
+                </div>
+                <div className="flex items-center gap-1 text-gray-500 text-sm mt-2 mb-1">
+                  <EnvironmentOutlined />
+                  <span className="truncate">{hotel.address}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: hotel.starRating }, (_, i) => (
+                    <StarFilled key={i} className="text-yellow-400 text-xs" />
+                  ))}
+                </div>
+              </div>
             </div>
-            <div className="p-4">
-              <div className="flex justify-between items-start">
-                <span className="text-base font-semibold truncate">{hotel.name}</span>
-                <span className="text-red-500 font-bold text-lg flex-shrink-0 ml-2">
-                  ¥{hotel.minPrice}
-                  <span className="text-xs font-normal text-gray-400">起</span>
-                </span>
-              </div>
-              <div className="flex items-center gap-1 text-gray-500 text-sm mt-2 mb-1">
-                <EnvironmentOutlined />
-                <span className="truncate">{hotel.address}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                {Array.from({ length: hotel.starRating }, (_, i) => (
-                  <StarFilled key={i} className="text-yellow-400 text-xs" />
-                ))}
-              </div>
-            </div>
-          </div>
-        </Link>
-      ))}
-    </div>
+          </Link>
+        ))}
+      </div>
+      {hotels.length > 6 && (
+        <div className="text-center mt-6">
+          <Link
+            href="/hotels/list"
+            className="inline-block px-6 py-2 text-sm text-blue-600 bg-white rounded-full shadow-sm hover:shadow-md transition-shadow"
+          >
+            查看全部 {hotels.length} 家酒店 →
+          </Link>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -88,9 +103,10 @@ export default function HotelSearchPage() {
       {/* 顶部 Banner — 静态内容，PPR 立即渲染 */}
       <div className="relative w-full h-48 sm:h-60 bg-blue-600 overflow-hidden">
         <Image
-          src="/hotel_img/hotel1.png"
+          src="/hotel_img/hotel1.webp"
           alt="Luxury Hotel"
           fill
+          sizes="100vw"
           className="object-cover opacity-60"
           priority
         />
@@ -102,8 +118,10 @@ export default function HotelSearchPage() {
         </div>
       </div>
 
-      {/* 搜索区域 (客户端组件) — PPR 立即渲染 */}
-      <SearchSection />
+      {/* 搜索区域 (客户端组件) — PPR: Suspense 边界处理 new Date() */}
+      <Suspense>
+        <SearchSection />
+      </Suspense>
 
       {/* 热门酒店列表 — PPR: Suspense 边界，数据流式传输 */}
       <div className="mt-8 px-4 max-w-4xl mx-auto w-full">

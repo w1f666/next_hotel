@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Button, Toast, Image, Popup, Form, Input } from 'antd-mobile';
+import { useState } from 'react';
+import { Button, Toast, Popup, Form, Input } from 'antd-mobile';
+import NextImage from 'next/image';
 import type { HotelRoom } from '@/types';
 
 interface RoomListProps {
@@ -71,8 +72,8 @@ export default function RoomList({ rooms, hotelId, checkIn, checkOut }: RoomList
       <h2 className="font-bold text-base px-1 pt-2">房型预订</h2>
       {rooms?.map((room) => (
         <div key={room.id} className="bg-white rounded-lg p-3 flex gap-3 shadow-sm">
-          <div className="w-24 h-24 shrink-0 rounded-md overflow-hidden bg-gray-100">
-            <Image src={room.imageUrl || ''} alt={room.roomName} fit="cover" width="100%" height="100%" />
+          <div className="w-24 h-24 shrink-0 rounded-md overflow-hidden bg-gray-100 relative">
+            <NextImage src={room.imageUrl || '/hotel_img/hotel1.webp'} alt={room.roomName} fill sizes="96px" className="object-cover" />
           </div>
           <div className="flex-1 flex flex-col justify-between py-0.5">
             <div>

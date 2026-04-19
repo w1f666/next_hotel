@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { getHotelById, getPublishedHotels } from '@/lib/actions/hotel.queries';
@@ -42,7 +42,9 @@ export default async function HotelDetailPage({
       <main className="px-3 relative -mt-4 z-10 space-y-3 pb-8">
         <HotelInfo hotel={hotel} />
 
-        <DateRoomSection rooms={hotel.rooms || []} hotelId={hotel.id} />
+        <Suspense fallback={<div className="bg-white rounded-lg p-4 shadow-sm animate-pulse h-40" />}>
+          <DateRoomSection rooms={hotel.rooms || []} hotelId={hotel.id} />
+        </Suspense>
       </main>
     </div>
   );

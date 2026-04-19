@@ -1,7 +1,8 @@
 'use client';
 import 'antd-mobile/es/global';
 import React, { useState } from 'react';
-import { Swiper, ImageViewer, Image } from 'antd-mobile';
+import { Swiper, ImageViewer } from 'antd-mobile';
+import NextImage from 'next/image';
 
 export default function HotelBanner({ images }: { images: string[] }) {
   const [visible, setVisible] = useState(false);
@@ -10,19 +11,19 @@ export default function HotelBanner({ images }: { images: string[] }) {
     <>
       <div className="relative w-full h-56 bg-gray-200">
         <Swiper loop autoplay>
-          {images.map((img) => (
+          {images.map((img, idx) => (
             <Swiper.Item key={img}>
               <div 
-                className="w-full h-56 cursor-pointer"
+                className="relative w-full h-56 cursor-pointer"
                 onClick={() => setVisible(true)}
               >
-                <Image 
-                  src={img} 
-                  alt="banner" 
-                  fit='cover'
-                  width='100%'
-                  height='100%'
-                  className="block"
+                <NextImage
+                  src={img}
+                  alt={`hotel-${idx + 1}`}
+                  fill
+                  sizes="100vw"
+                  className="object-cover"
+                  priority={idx === 0}
                 />
               </div>
             </Swiper.Item>
