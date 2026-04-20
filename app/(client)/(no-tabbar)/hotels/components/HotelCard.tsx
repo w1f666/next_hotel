@@ -1,16 +1,16 @@
 'use client';
 
 import React, { memo } from 'react';
-import { EnvironmentOutlined, StarFilled, SafetyCertificateFilled } from '@ant-design/icons';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { HotelListItem } from '@/types';
 
 interface HotelCardProps {
   hotel: HotelListItem;
+  priority?: boolean;
 }
 
-function HotelCard({ hotel }: HotelCardProps) {
+function HotelCard({ hotel, priority }: HotelCardProps) {
   const starConfig = hotel.starRating >= 5
     ? { label: '奢华', scoreColor: 'text-amber-700', badge: 'bg-gradient-to-r from-amber-800/75 to-amber-600/75' }
     : hotel.starRating >= 4
@@ -32,14 +32,15 @@ function HotelCard({ hotel }: HotelCardProps) {
             fill
             sizes="(max-width: 768px) 100vw, 400px"
             className="object-cover"
-            loading="lazy"
-            placeholder="blur"
+            loading={priority ? undefined : 'lazy'}
+            priority={priority}
+            placeholder={priority ? undefined : 'blur'}
             blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
 
           <div className={`absolute top-3 left-3 ${starConfig.badge} backdrop-blur-md text-white text-[11px] font-semibold px-2.5 py-1 rounded-lg flex items-center gap-1`}>
-            <StarFilled className="text-[10px]" />
+            <svg className="w-2.5 h-2.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
             {starConfig.label}
           </div>
 
@@ -59,12 +60,12 @@ function HotelCard({ hotel }: HotelCardProps) {
         <div className="px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1 flex-1 min-w-0">
-              <EnvironmentOutlined className="text-gray-400 text-[11px] flex-shrink-0" />
+              <svg className="w-[11px] h-[11px] text-gray-400 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 010-5 2.5 2.5 0 010 5z"/></svg>
               <span className="text-[12px] text-gray-500 truncate">{hotel.address}</span>
             </div>
             <div className="flex items-center gap-0.5 ml-2 flex-shrink-0">
               {Array.from({ length: hotel.starRating }, (_, i) => (
-                <StarFilled key={i} className="text-amber-400 text-[9px]" />
+                <svg key={i} className="w-[9px] h-[9px] text-amber-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
               ))}
             </div>
           </div>
@@ -86,7 +87,7 @@ function HotelCard({ hotel }: HotelCardProps) {
 
           <div className="flex items-end justify-between mt-3 pt-2.5 border-t border-gray-100/80">
             <div className="flex items-center gap-1.5">
-              <SafetyCertificateFilled className="text-emerald-500 text-[11px]" />
+              <svg className="w-[11px] h-[11px] text-emerald-500" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
               <span className="text-[11px] text-emerald-600 font-medium">免费取消</span>
             </div>
             <div className="flex items-baseline">

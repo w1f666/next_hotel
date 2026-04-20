@@ -1,16 +1,7 @@
 'use client';
 
-import 'antd-mobile/es/global';
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Empty } from 'antd';
-import { CalendarPicker } from 'antd-mobile';
-import { unstableSetRender } from 'antd-mobile';
-import { createRoot, type Root } from 'react-dom/client';
-import {
-  EnvironmentOutlined, SearchOutlined,
-  FilterOutlined, CloseOutlined,
-  CalendarOutlined, FireFilled, LeftOutlined
-} from '@ant-design/icons';
+import { ErrorBlock, CalendarPicker } from 'antd-mobile';
 import dayjs from 'dayjs';
 import 'dayjs/locale/zh-cn';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -21,13 +12,6 @@ import HotelCard from '../../components/HotelCard';
 import FilterModal from '../../components/FilterModal';
 
 dayjs.locale('zh-cn');
-
-// --- React 19 兼容性补丁 ---
-unstableSetRender((node: React.ReactNode, container: Element | DocumentFragment) => {
-  const root: Root = createRoot(container as HTMLElement);
-  root.render(node);
-  return async () => { root.unmount(); };
-});
 
 const CITIES = [
   { value: 'all', label: '全部' },
@@ -244,7 +228,7 @@ export default function HotelListClient({
               className="flex items-center justify-center w-8 h-8 rounded-lg bg-white/10 border border-white/10 cursor-pointer active:bg-white/20 transition-all flex-shrink-0"
               onClick={() => router.push('/hotels')}
             >
-              <LeftOutlined className="!text-white/80 text-sm" />
+              <svg className="w-4 h-4 text-white/80" viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
             </div>
             {/* 城市选择器 */}
             <div className="relative" ref={cityPickerRef}>
@@ -252,7 +236,7 @@ export default function HotelListClient({
                 className="flex items-center gap-1.5 cursor-pointer py-1.5 px-3 rounded-xl bg-white/10 border border-white/10 active:bg-white/20 transition-all"
                 onClick={() => setCityPickerVisible(!cityPickerVisible)}
               >
-                <EnvironmentOutlined className="!text-white/80 text-sm" />
+                <svg className="w-3.5 h-3.5 text-white/80" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 010-5 2.5 2.5 0 010 5z"/></svg>
                 <span className="font-semibold text-sm text-white tracking-wide">
                   {CITIES.find(c => c.value === city)?.label || '上海'}
                 </span>
@@ -284,7 +268,7 @@ export default function HotelListClient({
               className="flex-1 flex items-center gap-2 cursor-pointer py-1.5 px-3 rounded-xl bg-white/10 border border-white/10 active:bg-white/20 transition-all"
               onClick={() => setDatePickerOpen(true)}
             >
-              <CalendarOutlined className="!text-white/80 text-sm" />
+              <svg className="w-3.5 h-3.5 text-white/80" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19a2 2 0 002 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM9 10H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z"/></svg>
               <span className="text-[13px] font-medium text-white/90">
                 {dateRange[0].format('M月D日')} — {dateRange[1].format('M月D日')}
               </span>
@@ -316,7 +300,7 @@ export default function HotelListClient({
         {/* 搜索框 */}
         <div className="px-4 mt-2.5 flex items-center gap-2.5">
           <div className="flex-1 flex items-center bg-white/95 backdrop-blur-sm rounded-2xl px-4 py-2.5 shadow-[0_2px_10px_rgba(0,0,0,0.1)]">
-            <SearchOutlined className="text-gray-400 text-[15px] mr-2.5" />
+            <svg className="w-4 h-4 text-gray-400 mr-2.5" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
             <input
               placeholder="搜索酒店名称、位置或品牌"
               value={keywordInput}
@@ -329,7 +313,7 @@ export default function HotelListClient({
                 className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center cursor-pointer active:bg-gray-300 ml-1"
                 onClick={() => { setKeywordInput(''); updateUrl({ keyword: null }); }}
               >
-                <CloseOutlined className="text-gray-500 text-[8px]" />
+                <svg className="w-2 h-2 text-gray-500" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
               </div>
             )}
           </div>
@@ -337,7 +321,7 @@ export default function HotelListClient({
             className="relative w-11 h-11 flex items-center justify-center bg-white/15 border border-white/20 rounded-2xl cursor-pointer active:bg-white/25 transition-all backdrop-blur-sm"
             onClick={() => setFilterVisible(true)}
           >
-            <FilterOutlined className="!text-white/80 text-base" />
+            <svg className="w-4 h-4 text-white/80" viewBox="0 0 24 24" fill="currentColor"><path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/></svg>
             {filterCount > 0 && (
               <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] min-w-[18px] h-[18px] rounded-full flex items-center justify-center font-bold border-2 border-[#1a1a2e] shadow-sm">
                 {filterCount}
@@ -380,7 +364,7 @@ export default function HotelListClient({
               updateUrl({ stars: next.length > 0 ? next.join(',') : null });
             }}
           >
-            {star}星 <CloseOutlined className="text-[7px] opacity-60" />
+            {star}星 <svg className="w-2 h-2 opacity-60 inline" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
           </div>
         ))}
         {selectedFacilities.slice(0, 2).map(f => (
@@ -392,7 +376,7 @@ export default function HotelListClient({
               updateUrl({ facilities: next.length > 0 ? next.join(',') : null });
             }}
           >
-            {f} <CloseOutlined className="text-[7px] opacity-60" />
+            {f} <svg className="w-2 h-2 opacity-60 inline" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
           </div>
         ))}
         {selectedFacilities.length > 2 && (
@@ -406,21 +390,16 @@ export default function HotelListClient({
       <div className="flex-1 overflow-y-auto" ref={scrollContainerRef}>
         <div className="px-4 pt-4 pb-2">
           {error ? (
-            <div className="py-20 bg-white rounded-[20px] mt-2 shadow-sm">
-              <Empty
-                description={
-                  <div className="space-y-3 mt-2">
-                    <p className="text-gray-400 text-sm">加载失败，请稍后再试</p>
-                    <button
-                      onClick={() => setSize(1)}
-                      className="text-sm font-medium text-white bg-[#1a1a2e] rounded-full px-5 py-2 active:bg-[#2a2a3e] transition-colors"
-                    >
-                      重试
-                    </button>
-                  </div>
-                }
-                image={Empty.PRESENTED_IMAGE_SIMPLE}
-              />
+            <div className="py-10 bg-white rounded-[20px] mt-2 shadow-sm [&_.adm-error-block]:flex [&_.adm-error-block]:flex-col [&_.adm-error-block]:items-center">
+              <ErrorBlock status="default" title="加载失败" description="请稍后再试" />
+              <div className="text-center mt-3">
+                <button
+                  onClick={() => setSize(1)}
+                  className="text-sm font-medium text-white bg-[#1a1a2e] rounded-full px-5 py-2 active:bg-[#2a2a3e] transition-colors"
+                >
+                  重试
+                </button>
+              </div>
             </div>
           ) : isLoading ? (
             <div className="space-y-4">
@@ -446,26 +425,21 @@ export default function HotelListClient({
               ))}
             </div>
           ) : uniqueHotels.length === 0 ? (
-            <div className="py-20 bg-white rounded-[20px] mt-2 shadow-sm">
-              <Empty
-                description={
-                  <div className="space-y-3 mt-2">
-                    <p className="text-gray-400 text-sm">没有找到符合条件的酒店</p>
-                    <button
-                      onClick={clearFilters}
-                      className="text-sm font-medium text-white bg-[#1a1a2e] rounded-full px-5 py-2 active:bg-[#2a2a3e] transition-colors"
-                    >
-                      清除筛选
-                    </button>
-                  </div>
-                }
-                image={Empty.PRESENTED_IMAGE_SIMPLE}
-              />
+            <div className="py-10 bg-white rounded-[20px] mt-2 shadow-sm [&_.adm-error-block]:flex [&_.adm-error-block]:flex-col [&_.adm-error-block]:items-center">
+              <ErrorBlock status="empty" title="没有找到符合条件的酒店" description="" />
+              <div className="text-center mt-3">
+                <button
+                  onClick={clearFilters}
+                  className="text-sm font-medium text-white bg-[#1a1a2e] rounded-full px-5 py-2 active:bg-[#2a2a3e] transition-colors"
+                >
+                  清除筛选
+                </button>
+              </div>
             </div>
           ) : (
             <div className="pb-4">
               <div className="mb-3 flex items-center gap-2 px-0.5">
-                <FireFilled className="text-orange-500 text-xs" />
+                <svg className="w-3 h-3 text-orange-500" viewBox="0 0 24 24" fill="currentColor"><path d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67zM11.71 19c-1.78 0-3.22-1.4-3.22-3.14 0-1.62 1.05-2.76 2.81-3.12 1.77-.36 3.6-1.21 4.62-2.58.39 1.29.59 2.65.59 4.04 0 2.65-2.15 4.8-4.8 4.8z"/></svg>
                 <span className="text-[13px] text-gray-600">
                   精选 <span className="font-bold text-gray-900">{uniqueHotels.length}</span> 家优质酒店
                 </span>
@@ -491,7 +465,7 @@ export default function HotelListClient({
                       transform: `translateY(${virtualRow.start}px)`,
                     }}
                   >
-                    <HotelCard hotel={uniqueHotels[virtualRow.index]} />
+                    <HotelCard hotel={uniqueHotels[virtualRow.index]} priority={virtualRow.index < 2} />
                   </div>
                 ))}
               </div>

@@ -1,7 +1,6 @@
 import React, { Suspense } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { StarFilled, EnvironmentOutlined, RightOutlined } from '@ant-design/icons';
 import { getPublishedHotels } from '@/lib/actions/hotel.queries';
 import SearchSection from './_components/SearchSection';
 import type { Metadata } from 'next';
@@ -45,12 +44,12 @@ async function HotelGrid() {
                   </span>
                 </div>
                 <div className="flex items-center gap-1 text-gray-500 text-sm mt-2 mb-1">
-                  <EnvironmentOutlined />
+                  <svg className="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 010-5 2.5 2.5 0 010 5z"/></svg>
                   <span className="truncate">{hotel.address}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   {Array.from({ length: hotel.starRating }, (_, i) => (
-                    <StarFilled key={i} className="text-yellow-400 text-xs" />
+                    <svg key={i} className="w-3 h-3 text-yellow-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
                   ))}
                 </div>
               </div>
@@ -138,14 +137,14 @@ export default function HotelSearchPage() {
             <div className="font-bold text-gray-800">我的订单</div>
             <div className="text-xs text-gray-400">查看行程安排</div>
           </div>
-          <RightOutlined className="text-gray-300" />
+          <svg className="w-3.5 h-3.5 text-gray-300" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
         </div>
         <div className="bg-white p-4 rounded-xl shadow-sm flex items-center justify-between cursor-pointer hover:shadow-md transition-shadow">
           <div>
             <div className="font-bold text-gray-800">特惠酒店</div>
             <div className="text-xs text-gray-400">低价精选推荐</div>
           </div>
-          <RightOutlined className="text-gray-300" />
+          <svg className="w-3.5 h-3.5 text-gray-300" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
         </div>
       </div>
     </div>

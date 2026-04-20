@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { LeftOutlined } from '@ant-design/icons';
 import { usePathname, useRouter } from 'next/navigation';
 
 export default function BackButton() {
@@ -23,7 +22,7 @@ export default function BackButton() {
                 transition-all duration-200 ease-in-out"
             onClick={() => router.back()}
         >
-            <LeftOutlined />
+            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
         </button>
     );
 }

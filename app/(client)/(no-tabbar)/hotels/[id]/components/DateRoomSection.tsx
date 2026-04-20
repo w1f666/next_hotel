@@ -1,21 +1,9 @@
 'use client';
 
-import 'antd-mobile/es/global';
 import React, { useState } from 'react';
 import { Toast, CalendarPicker } from 'antd-mobile';
-import { unstableSetRender } from 'antd-mobile';
-import { createRoot, type Root } from 'react-dom/client';
 import RoomList from './RoomList';
 import type { HotelRoom } from '@/types';
-
-// --- React 19 兼容性补丁 ---
-unstableSetRender((node: React.ReactNode, container: Element | DocumentFragment) => {
-  const root: Root = createRoot(container as HTMLElement);
-  root.render(node);
-  return async () => {
-    root.unmount();
-  };
-});
 
 const getToday = () => {
   const now = new Date();

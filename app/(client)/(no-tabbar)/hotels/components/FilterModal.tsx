@@ -1,8 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Button, Modal, InputNumber, ConfigProvider } from 'antd';
-import zhCN from 'antd/locale/zh_CN';
+import { Button, Popup } from 'antd-mobile';
 import { STAR_RATING_OPTIONS, FACILITY_OPTIONS } from '@/types';
 
 export const PRICE_RANGES = [
@@ -41,8 +40,7 @@ export default function FilterModal({
   const [tempCustomMax, setTempCustomMax] = useState<number | undefined>(undefined);
 
   // 打开弹窗时同步临时状态
-  const handleAfterOpenChange = (open: boolean) => {
-    if (open) {
+  const handleAfterShow = () => {
       setTempPriceRange(priceRange);
       setTempStars([...selectedStars]);
       setTempFacilities([...selectedFacilities]);
@@ -53,7 +51,6 @@ export default function FilterModal({
         setTempCustomMin(undefined);
         setTempCustomMax(undefined);
       }
-    }
   };
 
   const getTempPriceSelectValue = (): string => {
@@ -79,17 +76,12 @@ export default function FilterModal({
   };
 
   return (
-    <ConfigProvider locale={zhCN} theme={{ cssVar: { prefix: 'antd', key: 'app' }, token: { colorPrimary: '#0066FF', borderRadius: 8 } }}>
-    <Modal
-      open={visible}
-      title={null}
-      footer={null}
-      onCancel={onClose}
-      className="filter-modal"
-      centered
-      closable={false}
-      styles={{ body: { padding: 0 } }}
-      afterOpenChange={handleAfterOpenChange}
+    <Popup
+      visible={visible}
+      onMaskClick={onClose}
+      position="bottom"
+      bodyStyle={{ borderTopLeftRadius: 16, borderTopRightRadius: 16, maxHeight: '80vh' }}
+      afterShow={handleAfterShow}
     >
       {/* 自定义头部 */}
       <div className="flex items-center justify-between px-5 pt-5 pb-3">
@@ -138,45 +130,51 @@ export default function FilterModal({
           </div>
           {/* 自定义价格输入 */}
           <div className="flex items-center gap-2 mt-3">
-            <InputNumber
-              min={0}
-              max={99999}
-              placeholder="最低价"
-              value={tempCustomMin}
-              onChange={(v) => {
-                setTempCustomMin(v ?? undefined);
-                const min = v ?? 0;
-                const max = tempCustomMax ?? 99999;
-                if (min === 0 && max === 99999) {
-                  setTempPriceRange(null);
-                } else {
-                  setTempPriceRange([min, max]);
-                }
-              }}
-              className="flex-1"
-              prefix="¥"
-              size="small"
-            />
+            <div className="flex-1 flex items-center border border-gray-200 rounded-lg px-2 py-1.5">
+              <span className="text-gray-400 text-sm mr-1">¥</span>
+              <input
+                type="number"
+                min={0}
+                max={99999}
+                placeholder="最低价"
+                value={tempCustomMin ?? ''}
+                onChange={(e) => {
+                  const v = e.target.value ? Number(e.target.value) : undefined;
+                  setTempCustomMin(v);
+                  const min = v ?? 0;
+                  const max = tempCustomMax ?? 99999;
+                  if (min === 0 && max === 99999) {
+                    setTempPriceRange(null);
+                  } else {
+                    setTempPriceRange([min, max]);
+                  }
+                }}
+                className="w-full outline-none bg-transparent text-sm"
+              />
+            </div>
             <span className="text-gray-400 text-xs">—</span>
-            <InputNumber
-              min={0}
-              max={99999}
-              placeholder="最高价"
-              value={tempCustomMax}
-              onChange={(v) => {
-                setTempCustomMax(v ?? undefined);
-                const min = tempCustomMin ?? 0;
-                const max = v ?? 99999;
-                if (min === 0 && max === 99999) {
-                  setTempPriceRange(null);
-                } else {
-                  setTempPriceRange([min, max]);
-                }
-              }}
-              className="flex-1"
-              prefix="¥"
-              size="small"
-            />
+            <div className="flex-1 flex items-center border border-gray-200 rounded-lg px-2 py-1.5">
+              <span className="text-gray-400 text-sm mr-1">¥</span>
+              <input
+                type="number"
+                min={0}
+                max={99999}
+                placeholder="最高价"
+                value={tempCustomMax ?? ''}
+                onChange={(e) => {
+                  const v = e.target.value ? Number(e.target.value) : undefined;
+                  setTempCustomMax(v);
+                  const min = tempCustomMin ?? 0;
+                  const max = v ?? 99999;
+                  if (min === 0 && max === 99999) {
+                    setTempPriceRange(null);
+                  } else {
+                    setTempPriceRange([min, max]);
+                  }
+                }}
+                className="w-full outline-none bg-transparent text-sm"
+              />
+            </div>
           </div>
         </div>
 
@@ -241,13 +239,20 @@ export default function FilterModal({
 
       {/* 底部按钮 */}
       <div className="flex gap-3 px-5 py-4 border-t border-gray-100">
-        <Button size="large" className="flex-1 rounded-xl h-11 font-medium" onClick={onClose}>
+        <Button
+          size="large"
+          fill="outline"
+          className="flex-1"
+          style={{ borderRadius: 12, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          onClick={onClose}
+        >
           取消
         </Button>
         <Button
-          type="primary"
+          color="primary"
           size="large"
-          className="flex-1 rounded-xl h-11 bg-[#1a1a2e] hover:bg-[#2a2a3e] border-none font-medium"
+          className="flex-1"
+          style={{ borderRadius: 12, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1a1a2e', borderColor: '#1a1a2e' }}
           onClick={() => {
             onConfirm({
               priceRange: tempPriceRange,
@@ -259,7 +264,6 @@ export default function FilterModal({
           查看 {getTempFilterCount() > 0 ? `(${getTempFilterCount()}项筛选)` : '结果'}
         </Button>
       </div>
-    </Modal>
-    </ConfigProvider>
+    </Popup>
   );
 }

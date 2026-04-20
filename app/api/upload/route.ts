@@ -1,19 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
+import sharp from 'sharp';
 import { validateMagicBytes } from '@/lib/auth';
 
 // 定义上传目录
 const UPLOAD_DIR = path.join(process.cwd(), 'public', 'uploads');
 
 // MIME 类型 → 安全扩展名映射（同时作为允许的文件类型白名单）
-const MIME_TO_EXT: Record<string, string> = {
-  'image/jpeg': '.jpg',
-  'image/jpg': '.jpg',
-  'image/png': '.png',
-  'image/gif': '.gif',
-  'image/webp': '.webp',
-};
+const ALLOWED_MIME: Set<string> = new Set([
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/webp',
+]);
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const MAX_BATCH_FILES = 10;
@@ -29,7 +29,7 @@ async function ensureUploadDir() {
 
 async function processFile(file: File): Promise<{ url: string; filename: string; originalName: string; size: number } | null> {
   // 验证 MIME 类型
-  if (!MIME_TO_EXT[file.type]) return null;
+  if (!ALLOWED_MIME.has(file.type)) return null;
 
   // 验证文件大小
   if (file.size > MAX_FILE_SIZE) return null;
@@ -40,19 +40,23 @@ async function processFile(file: File): Promise<{ url: string; filename: string;
   // 验证文件魔术字节
   if (!validateMagicBytes(buffer, file.type)) return null;
 
-  const ext = MIME_TO_EXT[file.type];
   const timestamp = Date.now();
   const randomStr = Math.random().toString(36).substring(2, 8);
-  const filename = `${timestamp}-${randomStr}${ext}`;
+
+  // 统一转 WebP 压缩
+  const outputBuffer = await sharp(buffer)
+    .webp({ quality: 80 })
+    .toBuffer();
+  const filename = `${timestamp}-${randomStr}.webp`;
 
   const filePath = path.join(UPLOAD_DIR, filename);
-  await writeFile(filePath, buffer);
+  await writeFile(filePath, outputBuffer);
 
   return {
     url: `/uploads/${filename}`,
     filename,
     originalName: file.name,
-    size: file.size,
+    size: outputBuffer.length,
   };
 }
 
@@ -61,11 +65,10 @@ async function processFile(file: File): Promise<{ url: string; filename: string;
  *
  * 使用场景：HotelForm 中上传封面图 / 房型图片
  * 认证：middleware 验证 JWT + CSRF
- * 限制：仅图片（JPEG/PNG/GIF/WebP），单文件 ≤5MB，验证魔术字节
+ * 限制：仅图片（JPEG/PNG/WebP），单文件 ≤5MB，自动转 WebP，验证魔术字节
  */
 export async function POST(req: NextRequest) {
   try {
-    // 鉴权由 middleware 完成，这里二次确认
     const userId = req.headers.get('x-user-id');
     if (!userId) {
       return NextResponse.json({ success: false, message: '未登录' }, { status: 401 });
@@ -81,52 +84,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!MIME_TO_EXT[file.type]) {
-      return NextResponse.json(
-        { success: false, message: '不支持的图片格式' },
-        { status: 400 }
-      );
-    }
-
-    if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json(
-        { success: false, message: '图片大小不能超过5MB' },
-        { status: 400 }
-      );
-    }
-
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    // 校验文件魔术字节
-    if (!validateMagicBytes(buffer, file.type)) {
-      return NextResponse.json(
-        { success: false, message: '文件内容与类型不匹配' },
-        { status: 400 }
-      );
-    }
-
-    const ext = MIME_TO_EXT[file.type];
-    const timestamp = Date.now();
-    const randomStr = Math.random().toString(36).substring(2, 8);
-    const filename = `${timestamp}-${randomStr}${ext}`;
-
     await ensureUploadDir();
 
-    const filePath = path.join(UPLOAD_DIR, filename);
-    await writeFile(filePath, buffer);
-
-    const fileUrl = `/uploads/${filename}`;
+    const result = await processFile(file);
+    if (!result) {
+      return NextResponse.json(
+        { success: false, message: '不支持的图片格式、文件过大或内容不合法' },
+        { status: 400 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
       message: '上传成功',
-      data: {
-        url: fileUrl,
-        filename,
-        originalName: file.name,
-        size: file.size,
-      }
+      data: result,
     });
   } catch (error) {
     console.error('上传文件错误:', error);

@@ -1,25 +1,12 @@
 'use client';
 
-import 'antd-mobile/es/global';
 import React, { useState, useRef, useEffect } from 'react';
-import { Tabs, Input, Select, Button, Tag, ConfigProvider } from 'antd';
-import zhCN from 'antd/locale/zh_CN';
-import { CalendarPicker, Toast } from 'antd-mobile';
-import { unstableSetRender } from 'antd-mobile';
-import { createRoot, type Root } from 'react-dom/client';
-import { EnvironmentOutlined, SearchOutlined, AimOutlined } from '@ant-design/icons';
+import { Tabs, Button, Picker, CalendarPicker, Toast } from 'antd-mobile';
 import dayjs from 'dayjs';
 import 'dayjs/locale/zh-cn';
 import { useRouter } from 'next/navigation';
 
 dayjs.locale('zh-cn');
-
-// --- React 19 兼容性补丁 ---
-unstableSetRender((node: React.ReactNode, container: Element | DocumentFragment) => {
-  const root: Root = createRoot(container as HTMLElement);
-  root.render(node);
-  return async () => { root.unmount(); };
-});
 
 const getToday = () => {
     const now = new Date();
@@ -68,6 +55,15 @@ const CITIES = [
     { value: 'shenzhen', label: '深圳' },
 ];
 
+const PRICE_COLUMNS = [[
+    { label: '价格星级不限', value: 'all' },
+    { label: '¥150以下', value: '0-150' },
+    { label: '¥150-300', value: '150-300' },
+    { label: '¥300-450', value: '300-450' },
+    { label: '¥450-600', value: '450-600' },
+    { label: '¥600以上', value: '600+' },
+]];
+
 export default function SearchSection() {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState('domestic');
@@ -79,6 +75,7 @@ export default function SearchSection() {
     const [minDate, setMinDate] = useState<Date | null>(null);
     const [dateRange, setDateRange] = useState<[Date, Date] | null>(null);
     const [priceFilter, setPriceFilter] = useState<string>('all');
+    const [pricePickerVisible, setPricePickerVisible] = useState(false);
     const [mounted, setMounted] = useState(false);
 
     const nights = dateRange ? getNights(dateRange[0], dateRange[1]) : 0;
@@ -129,15 +126,13 @@ export default function SearchSection() {
     }
 
     return (
-        <ConfigProvider locale={zhCN} theme={{ cssVar: { prefix: 'antd', key: 'app' }, token: { colorPrimary: '#0066FF', borderRadius: 8 } }}>
         <div className="relative px-4 -mt-10 sm:-mt-12 max-w-2xl mx-auto w-full z-20">
             <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl p-4 sm:p-6 border border-white/40 overflow-hidden">
-                <Tabs
-                    activeKey={activeTab}
-                    items={tabsItems}
-                    onChange={setActiveTab}
-                    className="search-tabs mb-2"
-                />
+                <div className="[&_.adm-tabs-content]:hidden mb-2">
+                    <Tabs activeKey={activeTab} onChange={setActiveTab}>
+                        {tabsItems.map(t => <Tabs.Tab title={t.label} key={t.key} />)}
+                    </Tabs>
+                </div>
 
                 <div className="space-y-4">
                     <div className="flex items-center border-b border-gray-100 pb-3 gap-2">
@@ -149,7 +144,7 @@ export default function SearchSection() {
                                 <span className="text-xl font-bold">
                                     {CITIES.find(c => c.value === city)?.label || '选择城市'}
                                 </span>
-                                <EnvironmentOutlined className="text-gray-400" />
+                                <svg className="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 010-5 2.5 2.5 0 010 5z"/></svg>
                                 <span className="text-gray-400 text-[9px] ml-0.5">▼</span>
                             </div>
                             {cityPickerVisible && (
@@ -173,14 +168,13 @@ export default function SearchSection() {
                             )}
                         </div>
                         <div className="h-6 w-[1px] bg-gray-200 mx-2"></div>
-                        <Input
+                        <input
                             placeholder="位置 / 品牌 / 酒店"
-                            variant="borderless"
-                            className="flex-grow text-lg"
+                            className="flex-grow text-lg outline-none bg-transparent min-w-0 h-8"
                             value={keyword}
                             onChange={(e) => setKeyword(e.target.value)}
-                            suffix={<AimOutlined className="text-blue-500 text-xl cursor-pointer" />}
                         />
+                        <svg className="w-5 h-5 text-blue-500 cursor-pointer flex-shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0013 3.06V1h-2v2.06A8.994 8.994 0 003.06 11H1v2h2.06A8.994 8.994 0 0011 20.94V23h2v-2.06A8.994 8.994 0 0020.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>
                     </div>
 
                     <div
@@ -208,45 +202,36 @@ export default function SearchSection() {
                         </div>
                     </div>
 
-                    <div className="border-b border-gray-100 pb-3">
-                        <Select
-                            value={priceFilter}
-                            onChange={(value) => setPriceFilter(value)}
-                            placeholder="价格 / 星级"
-                            variant="borderless"
-                            className="w-full text-lg p-0"
-                            styles={{ popup: { root: { borderRadius: '12px' } } }}
-                            options={[
-                                { value: 'all', label: '价格星级不限' },
-                                { value: '0-150', label: '¥150以下' },
-                                { value: '150-300', label: '¥150-300' },
-                                { value: '300-450', label: '¥300-450' },
-                                { value: '450-600', label: '¥450-600' },
-                                { value: '600+', label: '¥600以上' },
-                            ]}
-                        />
+                    <div className="border-b border-gray-100 pb-3 cursor-pointer" onClick={() => setPricePickerVisible(true)}>
+                        <div className="flex items-center justify-between py-2">
+                            <span className={`text-lg ${priceFilter === 'all' ? 'text-gray-400' : 'text-gray-900'}`}>
+                                {PRICE_COLUMNS[0].find(p => p.value === priceFilter)?.label || '价格 / 星级'}
+                            </span>
+                            <span className="text-gray-400 text-xs">▼</span>
+                        </div>
                     </div>
 
                     <div className="flex flex-wrap gap-2 pt-2">
                         {quickTags.map((tag) => (
-                            <Tag
+                            <span
                                 key={tag}
-                                className="bg-gray-100 border-none rounded-md px-3 py-1 cursor-pointer hover:bg-gray-200 text-gray-600 transition-all"
+                                className="bg-gray-100 rounded-md px-3 py-1 cursor-pointer hover:bg-gray-200 text-gray-600 transition-all text-sm"
                             >
                                 {tag}
-                            </Tag>
+                            </span>
                         ))}
                     </div>
 
                     <div className="pt-4">
                         <Button
-                            type="primary"
+                            color="primary"
                             size="large"
                             block
-                            className="h-14 text-xl font-bold rounded-xl shadow-lg shadow-blue-200 bg-gradient-to-r from-blue-500 to-blue-600 hover:opacity-90 transition-all"
-                            icon={<SearchOutlined />}
+                            style={{ height: 56, fontSize: 20, fontWeight: 'bold', borderRadius: 12, background: 'linear-gradient(to right, #3b82f6, #2563eb)' }}
+                            className="shadow-lg shadow-blue-200"
                             onClick={handleSearch}
                         >
+                            <svg className="w-5 h-5 mr-2 inline" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
                             查询
                         </Button>
                     </div>
@@ -268,7 +253,14 @@ export default function SearchSection() {
                 }}
                 onClose={() => setCalendarVisible(false)}
             />
+
+            <Picker
+                columns={PRICE_COLUMNS}
+                visible={pricePickerVisible}
+                onClose={() => setPricePickerVisible(false)}
+                onConfirm={(val) => setPriceFilter(val[0] as string)}
+                value={[priceFilter]}
+            />
         </div>
-        </ConfigProvider>
     );
 }
